@@ -1595,11 +1595,13 @@ let role =
    TG SVG LOGO
    ============================================================ */
 
-const logoSvg = `<svg
+const logo = \`
+<svg
   class="logo"
   viewBox="0 0 100 100"
   xmlns="http://www.w3.org/2000/svg"
 >
+
 <rect
   x="4"
   y="4"
@@ -1608,20 +1610,21 @@ const logoSvg = `<svg
   rx="24"
   fill="#b8ff3d"
 />
+
 <path
   d="M24 30h12v15h28V30h12v40H64V55H36v15H24z"
   fill="#071006"
 />
+
 <circle
   cx="78"
   cy="50"
   r="7"
   fill="#071006"
 />
-</svg>`;
 
-
-
+</svg>
+\`;
 
 
 /* ============================================================
@@ -1647,7 +1650,7 @@ function shell(content) {
 
 function footer() {
 
-  return `
+  return \`
 
   <div class="footer">
 
@@ -1659,7 +1662,7 @@ function footer() {
 
   </div>
 
-  `;
+  \`;
 
 }
 
@@ -1670,13 +1673,13 @@ function footer() {
 
 function topbar(title) {
 
-  return `
+  return \`
 
 <header class="topbar">
 
   <div class="brand">
 
-    ${logo}
+    \${logo}
 
     <span>THEGYM</span>
 
@@ -1692,7 +1695,7 @@ function topbar(title) {
 
     <span class="pill">
 
-      ${title}
+      \${title}
 
     </span>
 
@@ -1709,7 +1712,7 @@ function topbar(title) {
 
 </header>
 
-`;
+\`;
 
 }
 
@@ -1856,7 +1859,7 @@ function toast(message) {
 
 function login() {
 
-  shell(`
+  shell(\`
 
 <main class="auth">
 
@@ -1864,7 +1867,7 @@ function login() {
 
     <div class="glass">
 
-      ${logo}
+      \${logo}
 
       <div
         class="eyebrow"
@@ -1937,9 +1940,9 @@ function login() {
 
 </main>
 
-${footer()}
+\${footer()}
 
-`);
+\`);
 
 
   document
@@ -2083,13 +2086,13 @@ function logout() {
 
 function landing() {
 
-  shell(`
+  shell(\`
 
 <header class="topbar">
 
   <div class="brand">
 
-    ${logo}
+    \${logo}
 
     <span>THEGYM</span>
 
@@ -2215,9 +2218,9 @@ function landing() {
 </main>
 
 
-${footer()}
+\${footer()}
 
-`);
+\`);
 
 
   animateStage();
@@ -2459,7 +2462,7 @@ function admin() {
       "ADMIN PANEL"
     ) +
 
-    `
+    \`
 
 <main class="appmain">
 
@@ -2559,9 +2562,9 @@ function admin() {
 
 </main>
 
-${footer()}
+\${footer()}
 
-`
+\`
 
   );
 
@@ -2580,7 +2583,7 @@ function registerView() {
       "MEMBERS REGISTER"
     ) +
 
-    `
+    \`
 
 <main class="appmain">
 
@@ -2788,9 +2791,9 @@ CREATE MEMBER PROFILE →
 
 </main>
 
-${footer()}
+\${footer()}
 
-`
+\`
 
   );
 
@@ -2863,7 +2866,7 @@ async function profilesView() {
         "MEMBERS PROFILE"
       ) +
 
-      `
+      \`
 
 <main class="appmain">
 
@@ -2927,30 +2930,30 @@ onclick="admin()"
 
 <tbody>
 
-${
+\${
 data.members.length
 ? data.members.map(
-  member => `
+  member => \`
 
 <tr>
 
 <td>
 <b>
-${esc(member.name)}
+\${esc(member.name)}
 </b>
 </td>
 
 
 <td>
-${fmt(member.joiningDate)}
+\${fmt(member.joiningDate)}
 </td>
 
 
 <td>
 
 <input
-id="w-${member.id}"
-value="${member.currentWeight}"
+id="w-\${member.id}"
+value="\${member.currentWeight}"
 type="number"
 step="0.1"
 style="
@@ -2967,15 +2970,15 @@ padding:7px
 
 
 <td>
-${member.joiningWeight} kg
+\${member.joiningWeight} kg
 </td>
 
 
 <td>
 
-${esc(member.goalCategory)}
+\${esc(member.goalCategory)}
 :
-${member.goalWeight}
+\${member.goalWeight}
 kg
 
 </td>
@@ -2984,14 +2987,14 @@ kg
 <td>
 
 <span
-class="tag ${
+class="tag \${
   member.growth >= 0
     ? "green"
     : "red"
 }"
 >
 
-${member.growth}%
+\${member.growth}%
 
 </span>
 
@@ -2999,7 +3002,7 @@ ${member.growth}%
 
 
 <td>
-${esc(member.contact)}
+\${esc(member.contact)}
 </td>
 
 
@@ -3012,7 +3015,7 @@ padding:8px 10px
 "
 onclick="
 updateWeight(
-'${member.id}'
+'\${member.id}'
 )
 "
 >
@@ -3025,10 +3028,10 @@ SAVE
 
 </tr>
 
-`
+\`
 ).join("")
 
-: `
+: \`
 
 <tr>
 
@@ -3046,7 +3049,7 @@ No members yet.
 
 </tr>
 
-`
+\`
 
 }
 
@@ -3062,9 +3065,9 @@ No members yet.
 
 </main>
 
-${footer()}
+\${footer()}
 
-`
+\`
 
     );
 
@@ -3220,39 +3223,39 @@ async function supreme() {
               );
 
 
-            return `
+            return \`
 
 <tr>
 
 <td>
-${index + 1}
+\${index + 1}
 </td>
 
 
 <td>
 <b>
-${esc(member.name)}
+\${esc(member.name)}
 </b>
 </td>
 
 
 <td>
-${fmt(today)}
+\${fmt(today)}
 </td>
 
 
 <td>
-₹${member.fee}
+₹\${member.fee}
 </td>
 
 
 <td>
 
 <span
-class="tag ${status.cls}"
+class="tag \${status.cls}"
 >
 
-${status.text}
+\${status.text}
 
 </span>
 
@@ -3262,14 +3265,14 @@ ${status.text}
 <td>
 
 <span
-class="tag ${
+class="tag \${
   member.growth >= 0
     ? "green"
     : "red"
 }"
 >
 
-${member.growth}%
+\${member.growth}%
 
 </span>
 
@@ -3277,12 +3280,12 @@ ${member.growth}%
 
 
 <td>
-${esc(member.contact)}
+\${esc(member.contact)}
 </td>
 
 </tr>
 
-`;
+\`;
 
           }
         )
@@ -3320,7 +3323,7 @@ ${esc(member.contact)}
         "SUPREME ADMIN"
       ) +
 
-      `
+      \`
 
 <main class="appmain">
 
@@ -3334,7 +3337,7 @@ ${esc(member.contact)}
 <div class="eyebrow">
 
 SUPREME COMMAND //
-${fmt(today)}
+\${fmt(today)}
 
 </div>
 
@@ -3370,7 +3373,7 @@ ACTIVE MEMBERS
 </h3>
 
 <b>
-${active}
+\${active}
 </b>
 
 </div>
@@ -3383,7 +3386,7 @@ AVERAGE GROWTH
 </h3>
 
 <b>
-${average}%
+\${average}%
 </b>
 
 </div>
@@ -3399,7 +3402,7 @@ REPORT DATE
 style="font-size:28px"
 >
 
-${fmt(today)}
+\${fmt(today)}
 
 </b>
 
@@ -3471,9 +3474,9 @@ Contact Number
 
 <tbody>
 
-${
+\${
 rows ||
-`
+\`
 <tr>
 <td
 colspan="7"
@@ -3482,7 +3485,7 @@ style="text-align:center"
 No members yet.
 </td>
 </tr>
-`
+\`
 }
 
 </tbody>
@@ -3498,9 +3501,9 @@ No members yet.
 
 </main>
 
-${footer()}
+\${footer()}
 
-`
+\`
 
     );
 
@@ -3550,7 +3553,7 @@ async function member() {
         "MEMBER PERFORMANCE"
       ) +
 
-      `
+      \`
 
 <main class="appmain">
 
@@ -3576,7 +3579,7 @@ margin:10px 0
 "
 >
 
-${esc(member.name)}
+\${esc(member.name)}
 
 </h1>
 
@@ -3584,10 +3587,10 @@ ${esc(member.name)}
 <p class="mini">
 
 Goal:
-${esc(member.goalCategory)}
+\${esc(member.goalCategory)}
 
 · Target
-${member.goalWeight}
+\${member.goalWeight}
 kg
 
 </p>
@@ -3608,7 +3611,7 @@ GROWTH STATUS
 
 <div class="bigstat">
 
-${member.growth}%
+\${member.growth}%
 
 </div>
 
@@ -3620,7 +3623,7 @@ ${member.growth}%
 <div
 class="bar"
 style="
-width:${progress}%
+width:\${progress}%
 "
 ></div>
 
@@ -3638,19 +3641,19 @@ Current:
 
 <b style="color:white">
 
-${member.currentWeight}
+\${member.currentWeight}
 kg
 
 </b>
 
 · Joined:
 
-${member.joiningWeight}
+\${member.joiningWeight}
 kg
 
 · Target:
 
-${member.goalWeight}
+\${member.goalWeight}
 kg
 
 </p>
@@ -3715,9 +3718,9 @@ height:270px
 
 </main>
 
-${footer()}
+\${footer()}
 
-`
+\`
 
     );
 
