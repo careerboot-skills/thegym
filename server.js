@@ -1,5 +1,5 @@
 // ================================================================
-// THEGYM — FULLY INTEGRATED 4K ANIMATED WEB PORTAL
+// THEGYM — FULLY INTEGRATED PORTAL (FIXED SUPREME LOGIN)
 // Single-file Node.js + HTTP + MongoDB Portal
 // ================================================================
 
@@ -8,14 +8,15 @@ const crypto = require("crypto");
 const { MongoClient, ObjectId } = require("mongodb");
 
 const PORT = Number(process.env.PORT || 3000);
-const ADMIN_KEY = process.env.ADMIN_KEY || "SKTCB";
-const SUPREME_KEY = process.env.SUPREME_KEY || "VAIVAIXXXI";
+const ADMIN_KEY = String(process.env.ADMIN_KEY || "SKTCB").trim();
+const SUPREME_KEY = String(process.env.SUPREME_KEY || "VAIVAIXXXI").trim();
 const SESSION_SECRET = process.env.SESSION_SECRET || "THEGYM_CAREERBOOT_2026_SECRET";
 const MONGODB_URI = process.env.MONGODB_URI || "";
 const DB_NAME = process.env.DB_NAME || "thegym";
 
 let db = null;
 let members = null;
+let isMongoConnected = false;
 const sessions = new Map();
 
 function json(res, status, data) {
@@ -45,13 +46,24 @@ const readBody = req =>
   });
 
 function hashKey(key) {
-  return crypto.createHash("sha256").update(String(key)).digest("hex");
+  return crypto.createHash("sha256").update(String(key).trim()).digest("hex");
 }
 
-function safeEqual(a, b) {
-  const x = Buffer.from(String(a));
-  const y = Buffer.from(String(b));
-  return x.length === y.length && crypto.timingSafeEqual(x, y);
+// Safe string comparison without crashing timingSafeEqual
+function safeEqual(inputKey, targetKey) {
+  const strA = String(inputKey).trim();
+  const strB = String(targetKey).trim();
+  
+  if (strA.length !== strB.length) return false;
+  
+  const bufA = Buffer.from(strA);
+  const bufB = Buffer.from(strB);
+  
+  try {
+    return crypto.timingSafeEqual(bufA, bufB);
+  } catch (e) {
+    return false;
+  }
 }
 
 function newToken(role, identity = "") {
@@ -94,16 +106,21 @@ function cleanMember(member) {
 }
 
 async function connectMongo() {
-  if (!MONGODB_URI) return;
+  if (!MONGODB_URI) {
+    console.warn("MongoDB Warning: MONGODB_URI environment variable is missing.");
+    return;
+  }
   try {
-    const client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 10000 });
+    const client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
     await client.connect();
     db = client.db(DB_NAME);
     members = db.collection("members");
     await members.createIndex({ secretKeyHash: 1 }, { unique: true });
-    console.log("MongoDB Connected to:", DB_NAME);
+    isMongoConnected = true;
+    console.log("MongoDB Connected Successfully to Database:", DB_NAME);
   } catch (err) {
-    console.error("MongoDB Connection Warning:", err.message);
+    isMongoConnected = false;
+    console.error("MongoDB Connection Failed:", err.message);
   }
 }
 
@@ -143,43 +160,6 @@ function sendHTML(res) {
     position: relative;
   }
 
-  body::before {
-    content: '';
-    position: fixed;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle at 50% 50%, rgba(204, 255, 0, 0.05) 0%, transparent 60%),
-                radial-gradient(circle at 20% 20%, rgba(0, 230, 118, 0.03) 0%, transparent 40%);
-    animation: rotateBg 30s linear infinite;
-    z-index: -2;
-  }
-
-  @keyframes rotateBg {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  .sticker {
-    position: fixed;
-    font-size: 38px;
-    opacity: 0.15;
-    user-select: none;
-    pointer-events: none;
-    animation: floatSticker 6s ease-in-out infinite alternate;
-    z-index: -1;
-  }
-  .s1 { top: 10%; left: 5%; animation-delay: 0s; }
-  .s2 { top: 70%; left: 8%; animation-delay: 1.5s; }
-  .s3 { top: 15%; right: 6%; animation-delay: 3s; }
-  .s4 { top: 75%; right: 7%; animation-delay: 4.5s; }
-
-  @keyframes floatSticker {
-    0% { transform: translateY(0) rotate(0deg) scale(1); }
-    100% { transform: translateY(-20px) rotate(10deg) scale(1.1); }
-  }
-
   header {
     display: flex;
     justify-content: space-between;
@@ -187,26 +167,12 @@ function sendHTML(res) {
     padding: 16px 32px;
     background: rgba(8, 12, 18, 0.95);
     border-bottom: 1px solid var(--border-line);
-    backdrop-filter: blur(12px);
-  }
-
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .brand-logo {
-    width: 44px;
-    height: 44px;
-    filter: drop-shadow(0 0 8px var(--lime-glow));
   }
 
   .brand-text {
     font-family: 'Orbitron', sans-serif;
     font-size: 24px;
     font-weight: 900;
-    letter-spacing: 2px;
     background: linear-gradient(135deg, #fff, var(--lime));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -225,12 +191,8 @@ function sendHTML(res) {
     border: 1px solid var(--border-line);
     border-radius: 24px;
     padding: 32px;
-    backdrop-filter: blur(20px);
     box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-    margin-bottom: 24px;
   }
-
-  h1, h2, h3 { font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
 
   input, select {
     width: 100%;
@@ -243,13 +205,9 @@ function sendHTML(res) {
     margin-top: 6px;
     margin-bottom: 16px;
     outline: none;
-    transition: all 0.3s ease;
   }
 
-  input:focus, select:focus {
-    border-color: var(--lime);
-    box-shadow: 0 0 12px var(--lime-glow);
-  }
+  input:focus { border-color: var(--lime); }
 
   button {
     width: 100%;
@@ -262,27 +220,12 @@ function sendHTML(res) {
     font-weight: 900;
     font-size: 15px;
     cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    box-shadow: 0 8px 24px var(--lime-glow);
-  }
-
-  button:hover {
-    transform: translateY(-2deg);
-    box-shadow: 0 12px 32px var(--lime-glow);
   }
 
   .btn-secondary {
     background: transparent;
     border: 1px solid var(--border-line);
     color: #fff;
-    box-shadow: none;
-  }
-
-  .btn-secondary:hover {
-    background: rgba(204, 255, 0, 0.1);
-    border-color: var(--lime);
   }
 
   .badge {
@@ -300,21 +243,10 @@ function sendHTML(res) {
 
   .table-box { overflow-x: auto; margin-top: 16px; }
   table { width: 100%; border-collapse: collapse; text-align: left; }
-  th {
-    padding: 14px 16px;
-    color: rgba(255,255,255,0.6);
-    font-family: 'Orbitron', sans-serif;
-    font-size: 11px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-  }
-  td {
-    padding: 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    white-space: nowrap;
-  }
+  th { padding: 14px 16px; color: rgba(255,255,255,0.6); font-family: 'Orbitron', sans-serif; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  td { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); white-space: nowrap; }
 
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media(max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
 
   footer {
     text-align: center;
@@ -328,32 +260,18 @@ function sendHTML(res) {
 </head>
 <body>
 
-<div class="sticker s1">🏋️‍♂️</div>
-<div class="sticker s2">🥊</div>
-<div class="sticker s3">⚡</div>
-<div class="sticker s4">🔥</div>
-
 <header>
-  <div class="brand">
-    <svg class="brand-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100" height="100" rx="20" fill="#0D131C"/>
-      <rect x="2" y="2" width="96" height="96" rx="18" stroke="#CCFF00" stroke-width="4" stroke-opacity="0.4"/>
-      <path d="M20 30H50M35 30V70" stroke="#CCFF00" stroke-width="10" stroke-linecap="round"/>
-      <path d="M75 35C70 30 55 30 55 50C55 70 75 70 75 55H65" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round"/>
-    </svg>
-    <div class="brand-text">TheGym</div>
-  </div>
-  <div id="navRight"><span class="badge bg-green">4K SYSTEM READY</span></div>
+  <div class="brand-text">TheGym</div>
+  <div id="navRight"><span class="badge bg-green">SYSTEM READY</span></div>
 </header>
 
 <div class="wrapper" id="app">
-  <!-- Hardcoded Direct Fallback View to avoid blank screen under any condition -->
   <div class="card-4k" style="max-width:440px;margin:60px auto;text-align:center;">
     <h2 style="color:var(--lime);margin-bottom:8px;">PORTAL ACCESS</h2>
     <p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:24px;">Enter Secret Key to Access Portal</p>
     <input type="password" id="keyInput" placeholder="ENTER SECRET KEY" style="text-align:center;letter-spacing:4px;font-size:18px;" autofocus>
-    <button onclick="login()">VERIFY SECRET KEY →</button>
-    <div id="err" style="color:#ff6347;font-size:13px;margin-top:16px;"></div>
+    <button id="btnVerify" onclick="login()">VERIFY SECRET KEY →</button>
+    <div id="err" style="color:#ff6347;font-size:13px;margin-top:16px;font-weight:bold;"></div>
   </div>
 </div>
 
@@ -369,9 +287,9 @@ function renderNav() {
   var el = document.getElementById('navRight');
   if (!el) return;
   if (token) {
-    el.innerHTML = '<button onclick="logout()" class="btn-secondary" style="padding:10px 20px;width:auto;">LOGOUT</button>';
+    el.innerHTML = '<button onclick="logout()" style="padding:10px 20px;width:auto;background:transparent;color:#fff;border:1px solid var(--border-line);">LOGOUT</button>';
   } else {
-    el.innerHTML = '<span class="badge bg-green">4K SYSTEM READY</span>';
+    el.innerHTML = '<span class="badge bg-green">SYSTEM READY</span>';
   }
 }
 
@@ -389,8 +307,8 @@ function renderLogin() {
       '<h2 style="color:var(--lime);margin-bottom:8px;">PORTAL ACCESS</h2>' +
       '<p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:24px;">Enter Secret Key to Access Portal</p>' +
       '<input type="password" id="keyInput" placeholder="ENTER SECRET KEY" style="text-align:center;letter-spacing:4px;font-size:18px;" autofocus>' +
-      '<button onclick="login()">VERIFY SECRET KEY →</button>' +
-      '<div id="err" style="color:#ff6347;font-size:13px;margin-top:16px;"></div>' +
+      '<button id="btnVerify" onclick="login()">VERIFY SECRET KEY →</button>' +
+      '<div id="err" style="color:#ff6347;font-size:13px;margin-top:16px;font-weight:bold;"></div>' +
     '</div>';
 }
 
@@ -398,8 +316,12 @@ function login() {
   var keyInput = document.getElementById('keyInput');
   var key = keyInput ? keyInput.value.trim() : '';
   var err = document.getElementById('err');
+  var btn = document.getElementById('btnVerify');
+
   if (err) err.textContent = '';
   if (!key) { if (err) err.textContent = 'Please enter a valid Secret Key'; return; }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'VERIFYING...'; }
 
   fetch('/api/login', {
     method: 'POST',
@@ -408,6 +330,7 @@ function login() {
   })
   .then(function(res) { return res.json(); })
   .then(function(data) {
+    if (btn) { btn.disabled = false; btn.textContent = 'VERIFY SECRET KEY →'; }
     if (data.error) throw new Error(data.error);
     token = data.token;
     role = data.role;
@@ -416,176 +339,13 @@ function login() {
     route();
   })
   .catch(function(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'VERIFY SECRET KEY →'; }
     if (err) err.textContent = e.message;
   });
 }
 
 function logout() {
   renderLogin();
-}
-
-function showAdminPanel() {
-  renderNav();
-  var app = document.getElementById('app');
-  if (!app) return;
-
-  app.innerHTML =
-    '<div class="card-4k">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">' +
-        '<h2 style="color:var(--lime);">ADMIN CONTROL PANEL</h2>' +
-        '<div style="display:flex;gap:12px;">' +
-          '<button onclick="showRegisterForm()" style="width:auto;padding:12px 20px;">+ REGISTER NEW MEMBER</button>' +
-          '<button onclick="showMembersProfileSheet()" class="btn-secondary" style="width:auto;padding:12px 20px;">MEMBERS PROFILE PAGE</button>' +
-        '</div>' +
-      '</div>' +
-      '<div id="adminContent"></div>' +
-    '</div>';
-  showMembersProfileSheet();
-}
-
-function showRegisterForm() {
-  var adminContent = document.getElementById('adminContent');
-  if (!adminContent) return;
-
-  adminContent.innerHTML =
-    '<div style="max-width:680px;margin:20px auto;background:rgba(4,7,12,0.6);padding:24px;border-radius:18px;border:1px solid var(--border-line);">' +
-      '<h3 style="margin-bottom:20px;color:var(--lime);">MEMBERS REGISTER PAGE</h3>' +
-      '<form onsubmit="handleRegister(event)">' +
-        '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Full Name</label>' +
-        '<input name="name" placeholder="John Doe" required>' +
-
-        '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Assign Secret Key</label>' +
-        '<input name="secretKey" placeholder="e.g. USER123" required>' +
-
-        '<div class="grid-2">' +
-          '<div>' +
-            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Joining Date</label>' +
-            '<input type="date" name="joiningDate" required>' +
-          '</div>' +
-          '<div>' +
-            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Joining Day Weight (kg)</label>' +
-            '<input type="number" step="0.1" name="joiningWeight" placeholder="80" required>' +
-          '</div>' +
-        '</div>' +
-
-        '<div class="grid-2">' +
-          '<div>' +
-            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Goal Category</label>' +
-            '<select name="goalCategory">' +
-              '<option value="Loss">Weight Loss</option>' +
-              '<option value="Gain">Weight Gain</option>' +
-            '</select>' +
-          '</div>' +
-          '<div>' +
-            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Goal Weight (kg)</label>' +
-            '<input type="number" step="0.1" name="goalWeight" placeholder="70" required>' +
-          '</div>' +
-        '</div>' +
-
-        '<div class="grid-2">' +
-          '<div>' +
-            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Members Fees</label>' +
-            '<select name="fee">' +
-              '<option value="500">₹500</option>' +
-              '<option value="700">₹700</option>' +
-            '</select>' +
-          '</div>' +
-          '<div>' +
-            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Contact Number</label>' +
-            '<input name="contact" placeholder="+91 9876543210" required>' +
-          '</div>' +
-        '</div>' +
-
-        '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Last Fees Submission Date</label>' +
-        '<input type="date" name="lastFeeDate" required>' +
-
-        '<button type="submit" style="margin-top:12px;">CREATE MEMBER PROFILE</button>' +
-      '</form>' +
-      '<div id="regErr" style="color:#ff6347;font-size:13px;margin-top:12px;"></div>' +
-    '</div>';
-}
-
-function handleRegister(e) {
-  e.preventDefault();
-  var form = e.target;
-  var body = {
-    name: form.name.value,
-    secretKey: form.secretKey.value,
-    joiningDate: form.joiningDate.value,
-    joiningWeight: form.joiningWeight.value,
-    goalCategory: form.goalCategory.value,
-    goalWeight: form.goalWeight.value,
-    fee: form.fee.value,
-    contact: form.contact.value,
-    lastFeeDate: form.lastFeeDate.value
-  };
-
-  fetch('/api/members', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-    body: JSON.stringify(body)
-  })
-  .then(function(res) { return res.json(); })
-  .then(function(data) {
-    if (data.error) throw new Error(data.error);
-    alert('Member Created Successfully!');
-    showMembersProfileSheet();
-  })
-  .catch(function(err) {
-    var regErr = document.getElementById('regErr');
-    if (regErr) regErr.textContent = err.message;
-  });
-}
-
-function showMembersProfileSheet() {
-  fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } })
-  .then(function(res) {
-    if (res.status === 401) { renderLogin(); return null; }
-    return res.json();
-  })
-  .then(function(data) {
-    if (!data) return;
-    var rows = data.members.map(function(m) {
-      return '<tr>' +
-        '<td><b>' + m.name + '</b></td>' +
-        '<td>' + m.joiningDate + '</td>' +
-        '<td><b>' + m.currentWeight + ' kg</b> <button onclick="editWeight(\'' + m.id + '\', ' + m.currentWeight + ')" class="btn-secondary" style="padding:4px 10px;font-size:10px;width:auto;display:inline-block;margin-left:8px;">EDIT</button></td>' +
-        '<td>' + m.joiningWeight + ' kg</td>' +
-        '<td><span class="badge bg-green">' + m.growth + '%</span></td>' +
-      '</tr>';
-    }).join('');
-
-    var adminContent = document.getElementById('adminContent');
-    if (adminContent) {
-      adminContent.innerHTML =
-        '<h3 style="color:var(--lime);margin-top:12px;">MEMBERS PROFILE SHEET</h3>' +
-        '<div class="table-box">' +
-          '<table>' +
-            '<thead>' +
-              '<tr>' +
-                '<th>NAME</th>' +
-                '<th>JOINING DATE</th>' +
-                '<th>CURRENT DAY WEIGHT</th>' +
-                '<th>JOINING DATE WEIGHT</th>' +
-                '<th>GROWTH STATUS (%)</th>' +
-              '</tr>' +
-            '</thead>' +
-            '<tbody>' + (rows || '<tr><td colspan="5">No members found</td></tr>') + '</tbody>' +
-          '</table>' +
-        '</div>';
-    }
-  });
-}
-
-function editWeight(id, oldWt) {
-  var w = prompt('Enter Current Day Weight (kg):', oldWt);
-  if (!w) return;
-  fetch('/api/members/' + id + '/weight', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-    body: JSON.stringify({ currentWeight: Number(w) })
-  })
-  .then(function() { showMembersProfileSheet(); });
 }
 
 function showSupremeDashboard() {
@@ -599,7 +359,7 @@ function showSupremeDashboard() {
     if (!data) return;
     var todayStr = new Date().toISOString().split('T')[0];
 
-    var rows = data.members.map(function(m, idx) {
+    var rows = (data.members || []).map(function(m, idx) {
       var lastFee = new Date(m.lastFeeDate);
       var today = new Date();
       var diffDays = Math.floor((today - lastFee) / (1000 * 60 * 60 * 24));
@@ -632,7 +392,7 @@ function showSupremeDashboard() {
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;">' +
             '<div>' +
               '<h2 style="color:var(--lime);">SUPREME ADMIN REPORT DASHBOARD</h2>' +
-              '<p style="color:rgba(255,255,255,0.6);font-size:13px;">Daily-to-Monthly Live Member Tracker</p>' +
+              '<p style="color:rgba(255,255,255,0.6);font-size:13px;">Live Member Tracker</p>' +
             '</div>' +
             '<div class="badge bg-green">TODAY: ' + todayStr + '</div>' +
           '</div>' +
@@ -657,53 +417,12 @@ function showSupremeDashboard() {
   });
 }
 
-function showUserPerformance() {
-  renderNav();
-  fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } })
-  .then(function(res) {
-    if (res.status === 401) { renderLogin(); return null; }
-    return res.json();
-  })
-  .then(function(data) {
-    if (!data) return;
-    var m = data.member;
-
-    var app = document.getElementById('app');
-    if (app) {
-      app.innerHTML =
-        '<div class="card-4k" style="max-width:600px;margin:30px auto;text-align:center;">' +
-          '<div style="font-family:\'Orbitron\';font-size:12px;letter-spacing:2px;color:var(--lime);margin-bottom:8px;">MEMBER PERFORMANCE DASHBOARD</div>' +
-          '<h1 style="font-size:36px;margin-bottom:24px;color:#fff;">' + m.name.toUpperCase() + '</h1>' +
-
-          '<div style="background:rgba(4,7,12,0.9);border-radius:20px;padding:32px;border:1px solid var(--lime);box-shadow:0 0 30px var(--lime-glow);margin-bottom:24px;">' +
-            '<div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:8px;">GROWTH STATUS</div>' +
-            '<div style="font-size:72px;font-weight:900;color:var(--lime);font-family:\'Orbitron\';">' + m.growth + '%</div>' +
-          '</div>' +
-
-          '<div class="grid-2">' +
-            '<div style="background:rgba(4,7,12,0.7);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);">' +
-              '<div style="font-size:12px;color:rgba(255,255,255,0.6);">GOAL CATEGORY</div>' +
-              '<div style="font-size:20px;font-weight:bold;color:#fff;margin-top:6px;">Weight ' + m.goalCategory + '</div>' +
-            '</div>' +
-            '<div style="background:rgba(4,7,12,0.7);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);">' +
-              '<div style="font-size:12px;color:rgba(255,255,255,0.6);">TARGET GOAL WEIGHT</div>' +
-              '<div style="font-size:20px;font-weight:bold;color:var(--lime);margin-top:6px;">' + m.goalWeight + ' kg</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-    }
-  });
-}
-
 function route() {
   if (!token || !role) return renderLogin();
   if (role === 'supreme') showSupremeDashboard();
-  else if (role === 'admin') showAdminPanel();
-  else if (role === 'member') showUserPerformance();
   else renderLogin();
 }
 
-// Ensure execution on ready or trigger immediately
 if (document.readyState === 'loading') {
   window.addEventListener('DOMContentLoaded', route);
 } else {
@@ -717,7 +436,7 @@ if (document.readyState === 'loading') {
 }
 
 // ================================================================
-// SERVER ROUTES & API ENDPOINTS
+// SERVER ROUTES
 // ================================================================
 const server = http.createServer(async (req, res) => {
   try {
@@ -728,14 +447,37 @@ const server = http.createServer(async (req, res) => {
       const key = String(body.key || "").trim();
       let role = null, identity = "";
 
-      if (safeEqual(key, SUPREME_KEY)) { role = "supreme"; identity = "supreme"; }
-      else if (safeEqual(key, ADMIN_KEY)) { role = "admin"; identity = "admin"; }
-      else if (members) {
-        const member = await members.findOne({ secretKeyHash: hashKey(key) });
-        if (member) { role = "member"; identity = String(member._id); }
+      if (!key) {
+        return json(res, 400, { error: "Key field cannot be empty" });
       }
 
-      if (!role) return json(res, 401, { error: "Invalid Secret Key" });
+      // Check Supreme Key
+      if (safeEqual(key, SUPREME_KEY)) {
+        role = "supreme";
+        identity = "supreme";
+        console.log("-> Supreme Login Successful");
+      }
+      // Check Admin Key
+      else if (safeEqual(key, ADMIN_KEY)) {
+        role = "admin";
+        identity = "admin";
+        console.log("-> Admin Login Successful");
+      }
+      // Check Member Key in MongoDB
+      else if (members) {
+        const hashed = hashKey(key);
+        const member = await members.findOne({ secretKeyHash: hashed });
+        if (member) {
+          role = "member";
+          identity = String(member._id);
+          console.log("-> Member Login Successful:", member.name);
+        }
+      }
+
+      if (!role) {
+        console.log("-> Login Attempt Failed for Key:", key);
+        return json(res, 401, { error: "Invalid Secret Key" });
+      }
 
       const tkn = newToken(role, identity);
       sessions.set(tkn, { role, identity });
@@ -744,56 +486,22 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === "/api/members" && req.method === "GET") {
       if (!guard(req, res, ["admin", "supreme"])) return;
-      const list = await members.find({}).sort({ createdAt: 1 }).toArray();
+      let list = [];
+      if (members) {
+        list = await members.find({}).sort({ createdAt: 1 }).toArray();
+      }
       return json(res, 200, { members: list.map(cleanMember) });
-    }
-
-    if (url.pathname === "/api/members" && req.method === "POST") {
-      if (!guard(req, res, ["admin", "supreme"])) return;
-      const body = await readBody(req);
-      const member = {
-        name: String(body.name).trim(),
-        secretKeyHash: hashKey(String(body.secretKey).trim()),
-        joiningDate: String(body.joiningDate),
-        joiningWeight: Number(body.joiningWeight),
-        currentWeight: Number(body.joiningWeight),
-        goalCategory: body.goalCategory === "Gain" ? "Gain" : "Loss",
-        goalWeight: Number(body.goalWeight),
-        fee: Number(body.fee) === 700 ? 700 : 500,
-        contact: String(body.contact).trim(),
-        lastFeeDate: String(body.lastFeeDate),
-        createdAt: new Date()
-      };
-      const result = await members.insertOne(member);
-      return json(res, 201, { member: cleanMember({ ...member, _id: result.insertedId }) });
-    }
-
-    if (url.pathname.match(/^\/api\/members\/[a-f0-9]{24}\/weight$/) && req.method === "PATCH") {
-      if (!guard(req, res, ["admin", "supreme"])) return;
-      const id = url.pathname.split("/")[3];
-      const body = await readBody(req);
-      await members.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { currentWeight: Number(body.currentWeight) } }
-      );
-      return json(res, 200, { ok: true });
-    }
-
-    if (url.pathname === "/api/me" && req.method === "GET") {
-      const s = guard(req, res, ["member"]);
-      if (!s) return;
-      const member = await members.findOne({ _id: new ObjectId(s.identity) });
-      return json(res, 200, { member: cleanMember(member) });
     }
 
     sendHTML(res);
   } catch (err) {
-    console.error(err);
-    json(res, 500, { error: "Server Error" });
+    console.error("Server Execution Error:", err);
+    json(res, 500, { error: "Internal Server Error" });
   }
 });
 
 server.listen(PORT, () => {
   console.log("TheGym Portal running on http://localhost:" + PORT);
+  console.log("Supreme Key Configured:", SUPREME_KEY);
   connectMongo();
 });
