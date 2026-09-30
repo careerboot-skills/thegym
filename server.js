@@ -151,7 +151,7 @@ function sendHTML(res) {
 
   .top-nav {
     display: flex;
-    justify-content: space-between;
+    justify-space: space-between;
     align-items: center;
     padding: 16px 24px;
     background: rgba(10, 14, 22, 0.85);
@@ -314,18 +314,22 @@ var role = localStorage.getItem('tg_role');
 function renderNav() {
   var el = document.getElementById('nav-btn');
   if (token) {
-    el.innerHTML = '<button onclick="logout()" class="btn-sub" style="width:auto;padding:8px 16px;">LOGOUT (' + role.toUpperCase() + ')</button>';
+    el.innerHTML = '<button onclick="logout()" class="btn-sub" style="width:auto;padding:8px 16px;">LOGOUT (' + (role ? role.toUpperCase() : 'USER') + ')</button>';
   } else {
     el.innerHTML = '<span class="status-badge status-green">PORTAL ONLINE</span>';
   }
 }
 
 function landing() {
+  localStorage.clear();
+  token = null;
+  role = null;
   renderNav();
+
   document.getElementById('app').innerHTML = 
     '<div class="card-4k" style="max-width:420px;margin:40px auto;text-align:center;">' +
       '<h1 style="font-size:26px;color:#b8ff3d;margin-bottom:8px;">THEGYM PORTAL</h1>' +
-      '<p style="color:#91a0ad;font-size:14px;margin-bottom:24px;">Enter your Secret Key to enter system.</p>' +
+      '<p style="color:#91a0ad;font-size:14px;margin-bottom:24px;">Enter Secret Key to proceed.</p>' +
       '<input type="password" id="keyInput" placeholder="ENTER SECRET KEY" autocomplete="off" style="text-align:center;letter-spacing:3px;">' +
       '<button onclick="doLogin()">ACCESS PORTAL →</button>' +
       '<div id="err" style="color:#ff6347;font-size:13px;margin-top:14px;"></div>' +
@@ -333,7 +337,9 @@ function landing() {
 }
 
 function doLogin() {
-  var keyVal = document.getElementById('keyInput').value.trim();
+  var inputEl = document.getElementById('keyInput');
+  if (!inputEl) return;
+  var keyVal = inputEl.value.trim();
   var errEl = document.getElementById('err');
   errEl.textContent = '';
   if (!keyVal) { errEl.textContent = 'Secret key is required'; return; }
@@ -358,8 +364,6 @@ function doLogin() {
 }
 
 function logout() {
-  localStorage.clear();
-  token = null; role = null;
   landing();
 }
 
@@ -436,8 +440,12 @@ function handleRegister(e) {
 
 function showMembersSheet() {
   fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } })
-  .then(function(res) { return res.json(); })
+  .then(function(res) {
+    if (res.status === 401) { landing(); return null; }
+    return res.json();
+  })
   .then(function(data) {
+    if (!data) return;
     if (data.error) throw new Error(data.error);
 
     var rows = data.members.map(function(m) {
@@ -478,8 +486,12 @@ function editWeight(id, oldWt) {
 function showSupremeDashboard() {
   renderNav();
   fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } })
-  .then(function(res) { return res.json(); })
+  .then(function(res) {
+    if (res.status === 401) { landing(); return null; }
+    return res.json();
+  })
   .then(function(data) {
+    if (!data) return;
     if (data.error) throw new Error(data.error);
     var todayStr = new Date().toISOString().split('T')[0];
 
@@ -528,8 +540,12 @@ function showSupremeDashboard() {
 function showMemberPerformance() {
   renderNav();
   fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } })
-  .then(function(res) { return res.json(); })
+  .then(function(res) {
+    if (res.status === 401) { landing(); return null; }
+    return res.json();
+  })
   .then(function(data) {
+    if (!data) return;
     if (data.error) throw new Error(data.error);
     var m = data.member;
 
@@ -559,7 +575,7 @@ function showMemberPerformance() {
 }
 
 function route() {
-  if (!token) { landing(); return; }
+  if (!token || !role) { landing(); return; }
   if (role === 'supreme') showSupremeDashboard();
   else if (role === 'admin') showAdminPanel();
   else if (role === 'member') showMemberPerformance();
