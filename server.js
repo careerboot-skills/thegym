@@ -383,7 +383,7 @@ async function connectMongo() {
 // COMPLETE FRONTEND
 // ================================================================
 
-const html = String.raw`<!doctype html>
+const html = `<!doctype html>
 
 <html lang="en">
 
@@ -1595,36 +1595,11 @@ let role =
    TG SVG LOGO
    ============================================================ */
 
-const logo = \`
-<svg
-  class="logo"
-  viewBox="0 0 100 100"
-  xmlns="http://www.w3.org/2000/svg"
->
-
-<rect
-  x="4"
-  y="4"
-  width="92"
-  height="92"
-  rx="24"
-  fill="#b8ff3d"
-/>
-
-<path
-  d="M24 30h12v15h28V30h12v40H64V55H36v15H24z"
-  fill="#071006"
-/>
-
-<circle
-  cx="78"
-  cy="50"
-  r="7"
-  fill="#071006"
-/>
-
-</svg>
-\`;
+const logo = '<svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
+'<rect x="4" y="4" width="92" height="92" rx="24" fill="#b8ff3d"/>' +
+'<path d="M24 30h12v15h28V30h12v40H64V55H36v15H24z" fill="#071006"/>' +
+'<circle cx="78" cy="50" r="7" fill="#071006"/>' +
+'</svg>';
 
 
 /* ============================================================
@@ -1650,19 +1625,11 @@ function shell(content) {
 
 function footer() {
 
-  return \`
-
-  <div class="footer">
-
-    TheGym +91 70079 47859
-
-    · WhatsApp +91 78958 32442
-
-    · ®CareerBoot ©2026
-
-  </div>
-
-  \`;
+  return '<div class="footer">' +
+    'TheGym +91 70079 47859 ' +
+    '· WhatsApp +91 78958 32442 ' +
+    '· ®CareerBoot ©2026' +
+  '</div>';
 
 }
 
@@ -1673,46 +1640,16 @@ function footer() {
 
 function topbar(title) {
 
-  return \`
-
-<header class="topbar">
-
-  <div class="brand">
-
-    \${logo}
-
-    <span>THEGYM</span>
-
-  </div>
-
-  <div
-    style="
-      display:flex;
-      gap:8px;
-      align-items:center
-    "
-  >
-
-    <span class="pill">
-
-      \${title}
-
-    </span>
-
-    <button
-      class="btn ghost"
-      onclick="logout()"
-    >
-
-      LOG OUT
-
-    </button>
-
-  </div>
-
-</header>
-
-\`;
+  return '<header class="topbar">' +
+  '<div class="brand">' +
+    logo +
+    '<span>THEGYM</span>' +
+  '</div>' +
+  '<div style="display:flex;gap:8px;align-items:center">' +
+    '<span class="pill">' + title + '</span>' +
+    '<button class="btn ghost" onclick="logout()">LOG OUT</button>' +
+  '</div>' +
+'</header>';
 
 }
 
@@ -1859,90 +1796,19 @@ function toast(message) {
 
 function login() {
 
-  shell(\`
-
-<main class="auth">
-
-  <div class="authbox">
-
-    <div class="glass">
-
-      \${logo}
-
-      <div
-        class="eyebrow"
-        style="margin-top:20px"
-      >
-
-        THEGYM //
-        SECURE ACCESS
-
-      </div>
-
-      <h1
-        style="
-          font-size:70px;
-          margin:12px 0
-        "
-      >
-
-        ENTER ACCESS
-
-      </h1>
-
-      <p
-        class="sub"
-        style="
-          margin:0 auto 24px
-        "
-      >
-
-        Enter your assigned
-        Secret Key.
-
-        TheGym automatically
-        routes you to the
-        correct secure panel.
-
-      </p>
-
-      <input
-        id="key"
-        class="key"
-        placeholder="SECRET KEY"
-        autocomplete="off"
-      >
-
-      <div
-        style="margin-top:16px"
-      >
-
-        <button
-          class="btn primary"
-          onclick="doLogin()"
-        >
-
-          ACCESS THEGYM →
-
-        </button>
-
-      </div>
-
-      <div
-        id="err"
-        class="mini"
-        style="margin-top:15px"
-      ></div>
-
-    </div>
-
-  </div>
-
-</main>
-
-\${footer()}
-
-\`);
+  shell('<main class="auth">' +
+  '<div class="authbox">' +
+    '<div class="glass">' +
+      logo +
+      '<div class="eyebrow" style="margin-top:20px">THEGYM // SECURE ACCESS</div>' +
+      '<h1 style="font-size:70px;margin:12px 0">ENTER ACCESS</h1>' +
+      '<p class="sub" style="margin:0 auto 24px">Enter your assigned Secret Key. TheGym automatically routes you to the correct secure panel.</p>' +
+      '<input id="key" class="key" placeholder="SECRET KEY" autocomplete="off">' +
+      '<div style="margin-top:16px"><button class="btn primary" onclick="doLogin()">ACCESS THEGYM →</button></div>' +
+      '<div id="err" class="mini" style="margin-top:15px"></div>' +
+    '</div>' +
+  '</div>' +
+'</main>' + footer());
 
 
   document
@@ -2086,141 +1952,36 @@ function logout() {
 
 function landing() {
 
-  shell(\`
+  shell('<header class="topbar">' +
+  '<div class="brand">' +
+    logo +
+    '<span>THEGYM</span>' +
+  '</div>' +
+  '<span class="pill">PREMIUM FITNESS SYSTEM</span>' +
+'</header>' +
 
-<header class="topbar">
+'<main class="wrap">' +
+'<section class="hero">' +
+  '<div>' +
+    '<div class="eyebrow">NEXT-GENERATION GYM EXPERIENCE</div>' +
+    '<div class="title">TRAIN<br><span>HARDER.</span><br>LIVE<br>STRONG.</div>' +
+    '<p class="sub">A cinematic performance platform for TheGym members and management. Premium dashboards, live progress tracking and an immersive gym atmosphere.</p>' +
+    '<div class="cta">' +
+      '<button class="btn primary" onclick="login()">ENTER THEGYM →</button>' +
+      '<span class="pill">4K UI · 3D-STYLE · LIVE DATA</span>' +
+    '</div>' +
+  '</div>' +
+  '<div class="stage" id="stage">' +
+    '<div class="orb"></div>' +
+  '</div>' +
+'</section>' +
 
-  <div class="brand">
-
-    \${logo}
-
-    <span>THEGYM</span>
-
-  </div>
-
-  <span class="pill">
-
-    PREMIUM FITNESS SYSTEM
-
-  </span>
-
-</header>
-
-
-<main class="wrap">
-
-<section class="hero">
-
-  <div>
-
-    <div class="eyebrow">
-
-      NEXT-GENERATION
-      GYM EXPERIENCE
-
-    </div>
-
-    <div class="title">
-
-      TRAIN<br>
-
-      <span>HARDER.</span><br>
-
-      LIVE<br>
-
-      STRONG.
-
-    </div>
-
-    <p class="sub">
-
-      A cinematic performance
-      platform for TheGym
-      members and management.
-
-      Premium dashboards,
-      live progress tracking
-      and an immersive gym
-      atmosphere.
-
-    </p>
-
-    <div class="cta">
-
-      <button
-        class="btn primary"
-        onclick="login()"
-      >
-
-        ENTER THEGYM →
-
-      </button>
-
-      <span class="pill">
-
-        4K UI · 3D-STYLE · LIVE DATA
-
-      </span>
-
-    </div>
-
-  </div>
-
-
-  <div
-    class="stage"
-    id="stage"
-  >
-
-    <div class="orb"></div>
-
-  </div>
-
-</section>
-
-
-<section class="cards">
-
-  <div class="glass stat">
-
-    <h3>
-      MEMBER EXPERIENCE
-    </h3>
-
-    <b>LIVE</b>
-
-  </div>
-
-
-  <div class="glass stat">
-
-    <h3>
-      TRACKING
-    </h3>
-
-    <b>24/7</b>
-
-  </div>
-
-
-  <div class="glass stat">
-
-    <h3>
-      THEGYM
-    </h3>
-
-    <b>2026</b>
-
-  </div>
-
-</section>
-
-</main>
-
-
-\${footer()}
-
-\`);
+'<section class="cards">' +
+  '<div class="glass stat"><h3>MEMBER EXPERIENCE</h3><b>LIVE</b></div>' +
+  '<div class="glass stat"><h3>TRACKING</h3><b>24/7</b></div>' +
+  '<div class="glass stat"><h3>THEGYM</h3><b>2026</b></div>' +
+'</section>' +
+'</main>' + footer());
 
 
   animateStage();
@@ -2462,109 +2223,35 @@ function admin() {
       "ADMIN PANEL"
     ) +
 
-    \`
+    '<main class="appmain">' +
+'<div class="wrap dashboard">' +
+'<div class="dashhead">' +
+  '<div>' +
+    '<div class="eyebrow">CONTROL CENTER</div>' +
+    '<h1>ADMIN PANEL</h1>' +
+    '<p class="mini">Create members and maintain live performance records.</p>' +
+  '</div>' +
+'</div>' +
 
-<main class="appmain">
+'<div class="grid">' +
+'<div class="glass wide">' +
+  '<div>' +
+    '<h2>Members Register</h2>' +
+    '<p class="mini">Create a new member profile with a unique access key.</p>' +
+  '</div>' +
+  '<button class="btn primary" onclick="registerView()">OPEN REGISTER →</button>' +
+'</div>' +
 
-<div class="wrap dashboard">
-
-<div class="dashhead">
-
-  <div>
-
-    <div class="eyebrow">
-      CONTROL CENTER
-    </div>
-
-    <h1>
-      ADMIN PANEL
-    </h1>
-
-    <p class="mini">
-
-      Create members and
-      maintain live
-      performance records.
-
-    </p>
-
-  </div>
-
-</div>
-
-
-<div class="grid">
-
-
-<div class="glass wide">
-
-  <div>
-
-    <h2>
-      Members Register
-    </h2>
-
-    <p class="mini">
-
-      Create a new member
-      profile with a unique
-      access key.
-
-    </p>
-
-  </div>
-
-  <button
-    class="btn primary"
-    onclick="registerView()"
-  >
-
-    OPEN REGISTER →
-
-  </button>
-
-</div>
-
-
-<div class="glass wide">
-
-  <div>
-
-    <h2>
-      Members Profile
-    </h2>
-
-    <p class="mini">
-
-      Update today's weight
-      and inspect growth
-      percentage.
-
-    </p>
-
-  </div>
-
-  <button
-    class="btn ghost"
-    onclick="profilesView()"
-  >
-
-    OPEN PROFILES →
-
-  </button>
-
-</div>
-
-
-</div>
-
-</div>
-
-</main>
-
-\${footer()}
-
-\`
+'<div class="glass wide">' +
+  '<div>' +
+    '<h2>Members Profile</h2>' +
+    '<p class="mini">Update today\'s weight and inspect growth percentage.</p>' +
+  '</div>' +
+  '<button class="btn ghost" onclick="profilesView()">OPEN PROFILES →</button>' +
+'</div>' +
+'</div>' +
+'</div>' +
+'</main>' + footer()
 
   );
 
@@ -2583,217 +2270,32 @@ function registerView() {
       "MEMBERS REGISTER"
     ) +
 
-    \`
-
-<main class="appmain">
-
-<div class="wrap">
-
-<div class="glass">
-
-<div class="dashhead">
-
-  <div>
-
-    <div class="eyebrow">
-      DATA ENTRY SHEET
-    </div>
-
-    <h1>
-      NEW MEMBER
-    </h1>
-
-  </div>
-
-
-  <button
-    class="btn ghost"
-    onclick="admin()"
-  >
-
-    ← BACK
-
-  </button>
-
-</div>
-
-
-<form
-  id="reg"
-  class="formgrid"
->
-
-
-<div class="field">
-
-<label>Name</label>
-
-<input
-  name="name"
-  required
->
-
-</div>
-
-
-<div class="field">
-
-<label>Secret Key</label>
-
-<input
-  name="secretKey"
-  required
->
-
-</div>
-
-
-<div class="field">
-
-<label>Joining Date</label>
-
-<input
-  type="date"
-  name="joiningDate"
-  required
->
-
-</div>
-
-
-<div class="field">
-
-<label>
-  Joining Day Weight (kg)
-</label>
-
-<input
-  type="number"
-  step="0.1"
-  min="1"
-  name="joiningWeight"
-  required
->
-
-</div>
-
-
-<div class="field">
-
-<label>
-  Goal Category
-</label>
-
-<select
-  name="goalCategory"
->
-
-<option value="Loss">
-  Weight Loss
-</option>
-
-<option value="Gain">
-  Weight Gain
-</option>
-
-</select>
-
-</div>
-
-
-<div class="field">
-
-<label>
-  Goal Weight (kg)
-</label>
-
-<input
-  type="number"
-  step="0.1"
-  min="1"
-  name="goalWeight"
-  required
->
-
-</div>
-
-
-<div class="field">
-
-<label>
-  Member Fees
-</label>
-
-<select name="fee">
-
-<option value="500">
-  ₹500
-</option>
-
-<option value="700">
-  ₹700
-</option>
-
-</select>
-
-</div>
-
-
-<div class="field">
-
-<label>
-  Contact Number
-</label>
-
-<input
-  name="contact"
-  inputmode="tel"
-  required
->
-
-</div>
-
-
-<div class="field">
-
-<label>
-  Last Fees Submission Date
-</label>
-
-<input
-  type="date"
-  name="lastFeeDate"
-  required
->
-
-</div>
-
-
-<div class="full">
-
-<button
-  class="btn primary"
-  type="submit"
->
-
-CREATE MEMBER PROFILE →
-
-</button>
-
-</div>
-
-
-</form>
-
-</div>
-
-</div>
-
-</main>
-
-\${footer()}
-
-\`
+    '<main class="appmain">' +
+'<div class="wrap">' +
+'<div class="glass">' +
+'<div class="dashhead">' +
+  '<div>' +
+    '<div class="eyebrow">DATA ENTRY SHEET</div>' +
+    '<h1>NEW MEMBER</h1>' +
+  '</div>' +
+  '<button class="btn ghost" onclick="admin()">← BACK</button>' +
+'</div>' +
+
+'<form id="reg" class="formgrid">' +
+'<div class="field"><label>Name</label><input name="name" required></div>' +
+'<div class="field"><label>Secret Key</label><input name="secretKey" required></div>' +
+'<div class="field"><label>Joining Date</label><input type="date" name="joiningDate" required></div>' +
+'<div class="field"><label>Joining Day Weight (kg)</label><input type="number" step="0.1" min="1" name="joiningWeight" required></div>' +
+'<div class="field"><label>Goal Category</label><select name="goalCategory"><option value="Loss">Weight Loss</option><option value="Gain">Weight Gain</option></select></div>' +
+'<div class="field"><label>Goal Weight (kg)</label><input type="number" step="0.1" min="1" name="goalWeight" required></div>' +
+'<div class="field"><label>Member Fees</label><select name="fee"><option value="500">₹500</option><option value="700">₹700</option></select></div>' +
+'<div class="field"><label>Contact Number</label><input name="contact" inputmode="tel" required></div>' +
+'<div class="field"><label>Last Fees Submission Date</label><input type="date" name="lastFeeDate" required></div>' +
+'<div class="full"><button class="btn primary" type="submit">CREATE MEMBER PROFILE →</button></div>' +
+'</form>' +
+'</div>' +
+'</div>' +
+'</main>' + footer()
 
   );
 
@@ -2859,6 +2361,21 @@ async function profilesView() {
         "/api/members"
       );
 
+    const rows = data.members.length
+      ? data.members.map(member =>
+          '<tr>' +
+            '<td><b>' + esc(member.name) + '</b></td>' +
+            '<td>' + fmt(member.joiningDate) + '</td>' +
+            '<td><input id="w-' + member.id + '" value="' + member.currentWeight + '" type="number" step="0.1" style="width:90px;background:#080b10;color:white;border:1px solid #222;border-radius:8px;padding:7px"></td>' +
+            '<td>' + member.joiningWeight + ' kg</td>' +
+            '<td>' + esc(member.goalCategory) + ': ' + member.goalWeight + ' kg</td>' +
+            '<td><span class="tag ' + (member.growth >= 0 ? "green" : "red") + '">' + member.growth + '%</span></td>' +
+            '<td>' + esc(member.contact) + '</td>' +
+            '<td><button class="btn primary" style="padding:8px 10px" onclick="updateWeight(\'' + member.id + '\')">SAVE</button></td>' +
+          '</tr>'
+        ).join("")
+      : '<tr><td colspan="8" style="text-align:center;padding:40px">No members yet.</td></tr>';
+
 
     shell(
 
@@ -2866,208 +2383,37 @@ async function profilesView() {
         "MEMBERS PROFILE"
       ) +
 
-      \`
-
-<main class="appmain">
-
-<div class="wrap">
-
-<div class="glass">
-
-<div class="dashhead">
-
-<div>
-
-<div class="eyebrow">
-LIVE MEMBER SHEET
-</div>
-
-<h1>
-MEMBERS PROFILE
-</h1>
-
-</div>
-
-
-<button
-class="btn ghost"
-onclick="admin()"
->
-← BACK
-</button>
-
-</div>
-
-
-<div class="tablewrap">
-
-<table class="table">
-
-<thead>
-
-<tr>
-
-<th>Name</th>
-
-<th>Joining Date</th>
-
-<th>Current Weight</th>
-
-<th>Joining Weight</th>
-
-<th>Goal</th>
-
-<th>Growth</th>
-
-<th>Contact</th>
-
-<th>Update</th>
-
-</tr>
-
-</thead>
-
-
-<tbody>
-
-\${
-data.members.length
-? data.members.map(
-  member => \`
-
-<tr>
-
-<td>
-<b>
-\${esc(member.name)}
-</b>
-</td>
-
-
-<td>
-\${fmt(member.joiningDate)}
-</td>
-
-
-<td>
-
-<input
-id="w-\${member.id}"
-value="\${member.currentWeight}"
-type="number"
-step="0.1"
-style="
-width:90px;
-background:#080b10;
-color:white;
-border:1px solid #222;
-border-radius:8px;
-padding:7px
-"
->
-
-</td>
-
-
-<td>
-\${member.joiningWeight} kg
-</td>
-
-
-<td>
-
-\${esc(member.goalCategory)}
-:
-\${member.goalWeight}
-kg
-
-</td>
-
-
-<td>
-
-<span
-class="tag \${
-  member.growth >= 0
-    ? "green"
-    : "red"
-}"
->
-
-\${member.growth}%
-
-</span>
-
-</td>
-
-
-<td>
-\${esc(member.contact)}
-</td>
-
-
-<td>
-
-<button
-class="btn primary"
-style="
-padding:8px 10px
-"
-onclick="
-updateWeight(
-'\${member.id}'
-)
-"
->
-
-SAVE
-
-</button>
-
-</td>
-
-</tr>
-
-\`
-).join("")
-
-: \`
-
-<tr>
-
-<td
-colspan="8"
-style="
-text-align:center;
-padding:40px
-"
->
-
-No members yet.
-
-</td>
-
-</tr>
-
-\`
-
-}
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
-
-</div>
-
-</main>
-
-\${footer()}
-
-\`
+      '<main class="appmain">' +
+'<div class="wrap">' +
+'<div class="glass">' +
+'<div class="dashhead">' +
+'<div>' +
+'<div class="eyebrow">LIVE MEMBER SHEET</div>' +
+'<h1>MEMBERS PROFILE</h1>' +
+'</div>' +
+'<button class="btn ghost" onclick="admin()">← BACK</button>' +
+'</div>' +
+
+'<div class="tablewrap">' +
+'<table class="table">' +
+'<thead>' +
+'<tr>' +
+'<th>Name</th>' +
+'<th>Joining Date</th>' +
+'<th>Current Weight</th>' +
+'<th>Joining Weight</th>' +
+'<th>Goal</th>' +
+'<th>Growth</th>' +
+'<th>Contact</th>' +
+'<th>Update</th>' +
+'</tr>' +
+'</thead>' +
+'<tbody>' + rows + '</tbody>' +
+'</table>' +
+'</div>' +
+'</div>' +
+'</div>' +
+'</main>' + footer()
 
     );
 
@@ -3223,69 +2569,15 @@ async function supreme() {
               );
 
 
-            return \`
-
-<tr>
-
-<td>
-\${index + 1}
-</td>
-
-
-<td>
-<b>
-\${esc(member.name)}
-</b>
-</td>
-
-
-<td>
-\${fmt(today)}
-</td>
-
-
-<td>
-₹\${member.fee}
-</td>
-
-
-<td>
-
-<span
-class="tag \${status.cls}"
->
-
-\${status.text}
-
-</span>
-
-</td>
-
-
-<td>
-
-<span
-class="tag \${
-  member.growth >= 0
-    ? "green"
-    : "red"
-}"
->
-
-\${member.growth}%
-
-</span>
-
-</td>
-
-
-<td>
-\${esc(member.contact)}
-</td>
-
-</tr>
-
-\`;
+            return '<tr>' +
+'<td>' + (index + 1) + '</td>' +
+'<td><b>' + esc(member.name) + '</b></td>' +
+'<td>' + fmt(today) + '</td>' +
+'<td>₹' + member.fee + '</td>' +
+'<td><span class="tag ' + status.cls + '">' + status.text + '</span></td>' +
+'<td><span class="tag ' + (member.growth >= 0 ? "green" : "red") + '">' + member.growth + '%</span></td>' +
+'<td>' + esc(member.contact) + '</td>' +
+'</tr>';
 
           }
         )
@@ -3323,187 +2615,43 @@ class="tag \${
         "SUPREME ADMIN"
       ) +
 
-      \`
-
-<main class="appmain">
-
-<div class="wrap dashboard">
-
-
-<div class="dashhead">
-
-<div>
-
-<div class="eyebrow">
-
-SUPREME COMMAND //
-\${fmt(today)}
-
-</div>
-
-<h1>
-REPORT DASHBOARD
-</h1>
-
-<p class="mini">
-
-Daily-to-monthly member
-and fee monitoring.
-
-</p>
-
-</div>
-
-</div>
-
-
-<div
-class="grid"
-style="
-grid-template-columns:
-repeat(4,1fr)
-"
->
-
-
-<div class="glass stat">
-
-<h3>
-ACTIVE MEMBERS
-</h3>
-
-<b>
-\${active}
-</b>
-
-</div>
-
-
-<div class="glass stat">
-
-<h3>
-AVERAGE GROWTH
-</h3>
-
-<b>
-\${average}%
-</b>
-
-</div>
-
-
-<div class="glass stat">
-
-<h3>
-REPORT DATE
-</h3>
-
-<b
-style="font-size:28px"
->
-
-\${fmt(today)}
-
-</b>
-
-</div>
-
-
-<div class="glass stat">
-
-<h3>
-FEE OPTIONS
-</h3>
-
-<b
-style="font-size:28px"
->
-
-₹500 / ₹700
-
-</b>
-
-</div>
-
-
-</div>
-
-
-<div class="glass">
-
-<div class="tablewrap">
-
-<table class="table">
-
-<thead>
-
-<tr>
-
-<th>
-SL No.
-</th>
-
-<th>
-Name
-</th>
-
-<th>
-Date
-</th>
-
-<th>
-Fees
-</th>
-
-<th>
-Status
-</th>
-
-<th>
-Growth
-</th>
-
-<th>
-Contact Number
-</th>
-
-</tr>
-
-</thead>
-
-
-<tbody>
-
-\${
-rows ||
-\`
-<tr>
-<td
-colspan="7"
-style="text-align:center"
->
-No members yet.
-</td>
-</tr>
-\`
-}
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
-
-
-</div>
-
-</main>
-
-\${footer()}
-
-\`
+      '<main class="appmain">' +
+'<div class="wrap dashboard">' +
+'<div class="dashhead">' +
+'<div>' +
+'<div class="eyebrow">SUPREME COMMAND // ' + fmt(today) + '</div>' +
+'<h1>REPORT DASHBOARD</h1>' +
+'<p class="mini">Daily-to-monthly member and fee monitoring.</p>' +
+'</div>' +
+'</div>' +
+
+'<div class="grid" style="grid-template-columns:repeat(4,1fr)">' +
+'<div class="glass stat"><h3>ACTIVE MEMBERS</h3><b>' + active + '</b></div>' +
+'<div class="glass stat"><h3>AVERAGE GROWTH</h3><b>' + average + '%</b></div>' +
+'<div class="glass stat"><h3>REPORT DATE</h3><b style="font-size:28px">' + fmt(today) + '</b></div>' +
+'<div class="glass stat"><h3>FEE OPTIONS</h3><b style="font-size:28px">₹500 / ₹700</b></div>' +
+'</div>' +
+
+'<div class="glass">' +
+'<div class="tablewrap">' +
+'<table class="table">' +
+'<thead>' +
+'<tr>' +
+'<th>SL No.</th>' +
+'<th>Name</th>' +
+'<th>Date</th>' +
+'<th>Fees</th>' +
+'<th>Status</th>' +
+'<th>Growth</th>' +
+'<th>Contact Number</th>' +
+'</tr>' +
+'</thead>' +
+'<tbody>' + (rows || '<tr><td colspan="7" style="text-align:center">No members yet.</td></tr>') + '</tbody>' +
+'</table>' +
+'</div>' +
+'</div>' +
+'</div>' +
+'</main>' + footer()
 
     );
 
@@ -3553,174 +2701,32 @@ async function member() {
         "MEMBER PERFORMANCE"
       ) +
 
-      \`
-
-<main class="appmain">
-
-<div class="wrap dashboard">
-
-<div class="memberhero">
-
-
-<div class="glass">
-
-<div class="eyebrow">
-
-YOUR PERFORMANCE //
-LIVE
-
-</div>
-
-
-<h1
-style="
-font-size:72px;
-margin:10px 0
-"
->
-
-\${esc(member.name)}
-
-</h1>
-
-
-<p class="mini">
-
-Goal:
-\${esc(member.goalCategory)}
-
-· Target
-\${member.goalWeight}
-kg
-
-</p>
-
-
-<div
-style="
-margin:50px 0 14px
-"
->
-
-<div class="mini">
-
-GROWTH STATUS
-
-</div>
-
-
-<div class="bigstat">
-
-\${member.growth}%
-
-</div>
-
-</div>
-
-
-<div class="progress">
-
-<div
-class="bar"
-style="
-width:\${progress}%
-"
-></div>
-
-</div>
-
-
-<p
-class="mini"
-style="
-margin-top:14px
-"
->
-
-Current:
-
-<b style="color:white">
-
-\${member.currentWeight}
-kg
-
-</b>
-
-· Joined:
-
-\${member.joiningWeight}
-kg
-
-· Target:
-
-\${member.goalWeight}
-kg
-
-</p>
-
-
-</div>
-
-
-<div
-class="glass"
-style="
-position:relative;
-overflow:hidden
-"
->
-
-<div class="eyebrow">
-
-THEGYM ENERGY
-
-</div>
-
-
-<h2
-style="
-font-size:46px;
-margin:10px 0
-"
->
-
-TRAIN.
-TRACK.
-TRANSFORM.
-
-</h2>
-
-
-<p class="sub">
-
-Your dashboard updates
-from the latest weight
-recorded by TheGym
-administration.
-
-</p>
-
-
-<div
-id="miniCanvas"
-style="
-height:270px
-"
-></div>
-
-
-</div>
-
-
-</div>
-
-</div>
-
-</main>
-
-\${footer()}
-
-\`
+      '<main class="appmain">' +
+'<div class="wrap dashboard">' +
+'<div class="memberhero">' +
+'<div class="glass">' +
+'<div class="eyebrow">YOUR PERFORMANCE // LIVE</div>' +
+'<h1 style="font-size:72px;margin:10px 0">' + esc(member.name) + '</h1>' +
+'<p class="mini">Goal: ' + esc(member.goalCategory) + ' · Target ' + member.goalWeight + ' kg</p>' +
+'<div style="margin:50px 0 14px">' +
+'<div class="mini">GROWTH STATUS</div>' +
+'<div class="bigstat">' + member.growth + '%</div>' +
+'</div>' +
+'<div class="progress">' +
+'<div class="bar" style="width:' + progress + '%"></div>' +
+'</div>' +
+'<p class="mini" style="margin-top:14px">Current: <b style="color:white">' + member.currentWeight + ' kg</b> · Joined: ' + member.joiningWeight + ' kg · Target: ' + member.goalWeight + ' kg</p>' +
+'</div>' +
+
+'<div class="glass" style="position:relative;overflow:hidden">' +
+'<div class="eyebrow">THEGYM ENERGY</div>' +
+'<h2 style="font-size:46px;margin:10px 0">TRAIN. TRACK. TRANSFORM.</h2>' +
+'<p class="sub">Your dashboard updates from the latest weight recorded by TheGym administration.</p>' +
+'<div id="miniCanvas" style="height:270px"></div>' +
+'</div>' +
+'</div>' +
+'</div>' +
+'</main>' + footer()
 
     );
 
