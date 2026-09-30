@@ -1,70 +1,111 @@
-const http=require('http');const crypto=require('crypto');const {MongoClient,ObjectId}=require('mongodb');
+const http=require('http');
+const crypto=require('crypto');
+const {MongoClient,ObjectId}=require('mongodb');
 
 const PORT=Number(process.env.PORT||3000);
 const DB=process.env.DB_NAME||'thegym';
 
 const ADMIN_KEY=process.env.ADMIN_KEY||'SKTCB';
 const SUPREME_KEY=process.env.SUPREME_KEY||'VAIVAIXXXI';
+
 const URI=process.env.MONGODB_URI||'';
+const SESSION_SECRET=
+  process.env.SESSION_SECRET||'CHANGE_THIS_SECRET';
 
-const SECRET=process.env.SESSION_SECRET||'CHANGE_ME_NOW';
+if(!URI){
+  console.error('MONGODB_URI is missing.');
+  process.exit(1);
+}
 
-let db,members;
+let db;
+let members;
+
 const sessions=new Map();
 
-/* =========================================================
-   HELPERS
-========================================================= */
+const hash=s=>
+  crypto
+    .createHash('sha256')
+    .update(String(s))
+    .digest('hex');
 
-const j=(res,status,data)=>{
-  res.writeHead(status,{
-    'Content-Type':'application/json; charset=utf-8',
-    'Cache-Control':'no-store'
-  });
-  res.end(JSON.stringify(data));
-};
-
-const body=req=>new Promise((ok,bad)=>{
-  let s='';
-  req.on('data',c=>{
-    s+=c;
-    if(s.length>1e6)req.destroy();
-  });
-  req.on('end',()=>{
-    try{
-      ok(s?JSON.parse(s):{});
-    }catch(e){
-      bad(e);
-    }
-  });
-  req.on('error',bad);
-});
-
-const hash=x=>
-  crypto.createHash('sha256')
-  .update(String(x))
-  .digest('hex');
+const token=(r,i='')=>
+  crypto
+    .createHmac('sha256',SESSION_SECRET)
+    .update(
+      r+'|'+i+'|'+crypto.randomUUID()
+    )
+    .digest('hex');
 
 const sess=req=>
   sessions.get(
     (req.headers.authorization||'')
-    .replace(/^Bearer\s+/i,'')
+      .replace(/^Bearer\s+/i,'')
   );
 
+const send=(res,status,data)=>{
+  res.writeHead(
+    status,
+    {
+      'Content-Type':
+        'application/json; charset=utf-8',
+      'Cache-Control':'no-store',
+      'X-Content-Type-Options':'nosniff'
+    }
+  );
+
+  res.end(
+    JSON.stringify(data)
+  );
+};
+
+const body=req=>
+  new Promise((ok,bad)=>{
+    let s='';
+
+    req.on('data',c=>{
+      s+=c;
+
+      if(s.length>1e6){
+        req.destroy();
+      }
+    });
+
+    req.on('end',()=>{
+      try{
+        ok(
+          s
+            ?JSON.parse(s)
+            :{}
+        );
+      }catch(e){
+        bad(e);
+      }
+    });
+
+    req.on('error',bad);
+  });
+
 function guard(req,res,roles){
+
   const s=sess(req);
 
-  if(!s||!roles.includes(s.role)){
-    j(res,401,{error:'Unauthorized'});
+  if(
+    !s ||
+    !roles.includes(s.role)
+  ){
+    send(
+      res,
+      401,
+      {
+        error:'Unauthorized'
+      }
+    );
+
     return null;
   }
 
   return s;
 }
-
-/* =========================================================
-   GROWTH
-========================================================= */
 
 function growth(m){
 
@@ -72,28 +113,36 @@ function growth(m){
   const c=+m.currentWeight;
   const g=+m.goalWeight;
 
-  if(!a||!c||!g||a===g)return 0;
-
-  let p;
-
-  if(m.goalCategory==='Loss'){
-    p=((a-c)/(a-g))*100;
-  }else{
-    p=((c-a)/(g-a))*100;
+  if(
+    !a ||
+    !g ||
+    a===g ||
+    !Number.isFinite(c)
+  ){
+    return 0;
   }
 
+  const p=
+    m.goalCategory==='Loss'
+      ?((a-c)/(a-g))*100
+      :((c-a)/(g-a))*100;
+
   return Math.round(
-    Math.max(0,Math.min(100,p))*10
+    Math.max(
+      0,
+      Math.min(
+        100,
+        p
+      )
+    )*10
   )/10;
 }
 
-/* =========================================================
-   CLEAN MEMBER
-========================================================= */
-
 function clean(m){
 
-  if(!m)return null;
+  if(!m){
+    return null;
+  }
 
   const x={
     ...m,
@@ -107,16 +156,21 @@ function clean(m){
   return x;
 }
 
-/* =========================================================
-   FEES
-========================================================= */
+function days(s){
 
-function daysSince(s){
-
-  const d=new Date(s+'T00:00:00');
+  const d=
+    new Date(
+      s+'T00:00:00'
+    );
 
   const n=new Date();
-  n.setHours(0,0,0,0);
+
+  n.setHours(
+    0,
+    0,
+    0,
+    0
+  );
 
   return Math.floor(
     (n-d)/86400000
@@ -125,20 +179,23 @@ function daysSince(s){
 
 function feeStatus(m){
 
-  const d=daysSince(m.lastFeeDate);
-  const left=30-d;
+  const gone=
+    days(m.lastFeeDate);
+
+  const left=
+    30-gone;
 
   return {
-    daysGone:d,
-    daysBalance:left,
+    gone,
+    left,
 
-    status:
-      d>30
-        ?'OVERDUE'
+    text:
+      gone>30
+        ?gone+' DAYS GONE'
         :left+' DAYS BALANCE',
 
-    tone:
-      d>30
+    cls:
+      gone>30
         ?'red'
         :left>=20
           ?'green'
@@ -148,16 +205,34 @@ function feeStatus(m){
   };
 }
 
+function esc(s){
+
+  return String(
+    s??''
+  ).replace(
+    /[&<>"']/g,
+    c=>({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#39;'
+    }[c])
+  );
+}
+
+
 /* =========================================================
-   SVG LOGO
+   TG SVG LOGO
 ========================================================= */
 
 const logo=
 '<svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'+
 '<rect x="4" y="4" width="92" height="92" rx="24" fill="#b8ff3d"/>'+
-'<path d="M22 28h14v16h28V28h14v44H64V58H36v14H22z" fill="#071006"/>'+
+'<path d="M20 27h14v17h32V27h14v46H66V59H34v14H20z" fill="#071006"/>'+
 '<circle cx="79" cy="50" r="7" fill="#071006"/>'+
 '</svg>';
+
 
 /* =========================================================
    COMPLETE FRONTEND
@@ -182,7 +257,7 @@ content="#05070a"
 >
 
 <title>
-TheGym — Premium Performance System
+TheGym
 </title>
 
 <style>
@@ -191,6 +266,17 @@ TheGym — Premium Performance System
 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap'
 );
 
+:root{
+  --lime:#b8ff3d;
+  --cyan:#40e7ff;
+  --bg:#05070a;
+  --muted:#91a0ad;
+  --line:#ffffff15;
+  --red:#ff6657;
+  --orange:#ff9f43;
+  --yellow:#ffd34e;
+}
+
 *{
   box-sizing:border-box;
 }
@@ -198,7 +284,7 @@ TheGym — Premium Performance System
 html,
 body{
   margin:0;
-  background:#05070a;
+  background:var(--bg);
   color:#fff;
   font-family:
     Inter,
@@ -210,14 +296,6 @@ body{
   overflow-x:hidden;
 }
 
-button,
-input,
-select{
-  font:inherit;
-}
-
-/* BACKGROUND */
-
 .bg{
   position:fixed;
   inset:0;
@@ -226,18 +304,20 @@ select{
   background:
     radial-gradient(
       circle at 75% 15%,
-      #40e7ff1c,
+      #40e7ff20,
       transparent 28%
     ),
+
     radial-gradient(
       circle at 15% 80%,
       #b8ff3d18,
       transparent 32%
     ),
+
     linear-gradient(
       145deg,
       #030507,
-      #0a1016 55%,
+      #090d12 55%,
       #040608
     );
 }
@@ -246,15 +326,13 @@ select{
   position:fixed;
   inset:0;
   z-index:-2;
-  opacity:.035;
+  opacity:.04;
   pointer-events:none;
 
   background-image:url(
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"
   );
 }
-
-/* TOP */
 
 .top{
   height:76px;
@@ -265,7 +343,7 @@ select{
   justify-content:space-between;
 
   border-bottom:
-    1px solid #ffffff12;
+    1px solid var(--line);
 
   background:#030507b8;
 
@@ -274,13 +352,13 @@ select{
 
   position:sticky;
   top:0;
-  z-index:10;
+  z-index:20;
 }
 
 .brand{
   display:flex;
-  gap:12px;
   align-items:center;
+  gap:12px;
 
   font-weight:900;
   letter-spacing:.15em;
@@ -302,36 +380,63 @@ select{
   margin:auto;
 }
 
-.pill{
-  border:
-    1px solid #ffffff14;
-
-  border-radius:999px;
-
-  padding:
-    8px 12px;
-
-  color:#aebac4;
-
-  font-size:11px;
-
-  letter-spacing:.12em;
+.eyebrow{
+  font-size:12px;
+  letter-spacing:.22em;
+  color:var(--lime);
+  font-weight:900;
 }
 
-/* BUTTONS */
+.title,
+h1,
+h2,
+h3{
+  font-family:
+    'Barlow Condensed',
+    sans-serif;
+
+  text-transform:uppercase;
+}
+
+.title{
+  font-size:
+    clamp(72px,10vw,160px);
+
+  line-height:.78;
+
+  font-weight:900;
+
+  letter-spacing:-.04em;
+
+  margin:
+    18px 0 25px;
+}
+
+.title span{
+  color:var(--lime);
+
+  text-shadow:
+    0 0 40px
+    #b8ff3d44;
+}
+
+.sub{
+  color:var(--muted);
+  line-height:1.7;
+  max-width:680px;
+}
 
 .btn{
   border:
-    1px solid #ffffff18;
+    1px solid var(--line);
 
   background:#0b1016;
-
   color:#fff;
 
   padding:
-    12px 18px;
+    12px 17px;
 
-  border-radius:10px;
+  border-radius:11px;
 
   cursor:pointer;
 
@@ -345,23 +450,46 @@ select{
     translateY(-2px);
 
   border-color:
-    #b8ff3d66;
+    #ffffff44;
 }
 
 .primary{
-  background:#b8ff3d;
+  background:
+    var(--lime);
+
   color:#071006;
 
+  border-color:
+    var(--lime);
+
   box-shadow:
-    0 0 30px
-    #b8ff3d24;
+    0 0 28px
+    #b8ff3d33;
 }
 
-.ghost{
+.pill,
+.tag{
+  display:inline-flex;
+  align-items:center;
+
+  border:
+    1px solid var(--line);
+
+  border-radius:999px;
+
+  padding:
+    7px 11px;
+
+  font-size:11px;
+
+  font-weight:900;
+
+  letter-spacing:.08em;
+
+  color:#cbd3da;
+
   background:#ffffff08;
 }
-
-/* HERO */
 
 .hero{
   min-height:
@@ -375,73 +503,30 @@ select{
   align-items:center;
 
   gap:30px;
-}
 
-.eyebrow{
-  font-size:12px;
-  letter-spacing:.22em;
-  color:#b8ff3d;
-  font-weight:900;
-}
-
-.title,
-h1,
-h2,
-h3{
-  font-family:
-    'Barlow Condensed',
-    sans-serif;
-
-  text-transform:
-    uppercase;
-}
-
-.title{
-  font-size:
-    clamp(70px,9vw,150px);
-
-  line-height:.78;
-
-  font-weight:900;
-
-  margin:
-    18px 0;
-}
-
-.title span{
-  color:#b8ff3d;
-}
-
-.sub{
-  color:#91a0ad;
-
-  line-height:1.7;
-
-  max-width:650px;
+  padding:5vh 0;
 }
 
 .cta{
   display:flex;
   gap:12px;
-  align-items:center;
   flex-wrap:wrap;
-  margin-top:26px;
+  margin-top:28px;
 }
 
-/* 3D STAGE */
-
 .stage{
-  height:650px;
+  height:620px;
   position:relative;
 
   display:grid;
   place-items:center;
 
-  perspective:1200px;
+  perspective:1000px;
 }
 
 .orb{
-  width:min(480px,70vw);
+  width:min(410px,70vw);
+
   aspect-ratio:1;
 
   border-radius:50%;
@@ -450,21 +535,20 @@ h3{
     radial-gradient(
       circle at 35% 28%,
       #fff,
-      #b8ff3d 7%,
+      #b8ff3d 8%,
       #17300a 25%,
       #060b0d 58%,
       #000
     );
 
   box-shadow:
-    0 0 80px #b8ff3d22,
+    0 0 100px #b8ff3d33,
     inset -40px -30px 80px #000;
 
   animation:
     float 5s ease-in-out infinite;
 
-  transform-style:
-    preserve-3d;
+  position:relative;
 }
 
 .orb:before,
@@ -478,7 +562,7 @@ h3{
 
   border-radius:50%;
 
-  inset:9%;
+  inset:8%;
 
   transform:
     rotateX(68deg);
@@ -500,26 +584,28 @@ h3{
     7s;
 }
 
-/* GLASS */
-
 .glass{
   background:
-    #0b1016bb;
+    linear-gradient(
+      145deg,
+      #11161dbd,
+      #05080ca8
+    );
 
   border:
-    1px solid #ffffff12;
+    1px solid var(--line);
 
-  border-radius:22px;
+  border-radius:20px;
+
+  padding:22px;
 
   box-shadow:
-    0 25px 90px #0008,
+    0 25px 70px #0008,
     inset 0 1px #ffffff08;
 
   backdrop-filter:
-    blur(20px);
+    blur(18px);
 }
-
-/* LOGIN */
 
 .auth{
   min-height:
@@ -532,57 +618,49 @@ h3{
 }
 
 .authbox{
-  width:min(520px,94vw);
+  width:min(540px,94vw);
   text-align:center;
 }
 
 .authbox .glass{
-  padding:38px;
+  padding:42px;
 }
 
-.key{
+.key,
+.field input,
+.field select{
   width:100%;
 
-  padding:17px;
+  padding:14px;
 
-  border-radius:12px;
+  border-radius:11px;
 
   border:
-    1px solid #ffffff16;
+    1px solid var(--line);
 
-  background:#05080c;
+  background:#070b10;
 
   color:#fff;
 
   outline:none;
-
-  text-align:center;
-
-  letter-spacing:.18em;
 }
 
-.key:focus{
-  border-color:#b8ff3d88;
+.key{
+  text-align:center;
+  letter-spacing:.18em;
+  font-weight:800;
+}
+
+.key:focus,
+.field input:focus,
+.field select:focus{
+  border-color:
+    #b8ff3d88;
 
   box-shadow:
-    0 0 25px
-    #b8ff3d18;
+    0 0 0 4px
+    #b8ff3d10;
 }
-
-/* FOOTER */
-
-.footer{
-  text-align:center;
-
-  padding:
-    28px 16px 40px;
-
-  color:#73808b;
-
-  font-size:12px;
-}
-
-/* DASHBOARD */
 
 .dash{
   padding:
@@ -594,18 +672,18 @@ h3{
   justify-content:space-between;
   align-items:end;
   gap:20px;
-  margin-bottom:24px;
+
+  margin-bottom:20px;
 }
 
 .head h1{
-  font-size:64px;
+  font-size:68px;
   line-height:.9;
   margin:8px 0;
 }
 
-/* CARDS */
-
-.cards{
+.cards,
+.grid{
   display:grid;
 
   grid-template-columns:
@@ -614,12 +692,10 @@ h3{
   gap:14px;
 }
 
-.stat{
-  padding:20px;
-}
-
-.stat small{
-  color:#83909b;
+.stat small,
+.mini{
+  color:var(--muted);
+  font-size:11px;
 }
 
 .stat b{
@@ -630,13 +706,10 @@ h3{
 
   font-size:48px;
 
-  margin-top:8px;
+  margin-top:7px;
 }
 
-/* PANEL */
-
 .panel{
-  padding:20px;
   margin-top:16px;
 }
 
@@ -646,15 +719,13 @@ h3{
   flex-wrap:wrap;
 }
 
-/* FORM */
-
 .formgrid{
   display:grid;
 
   grid-template-columns:
     repeat(2,1fr);
 
-  gap:12px;
+  gap:13px;
 }
 
 .field{
@@ -665,8 +736,7 @@ h3{
 
 .field label{
   font-size:11px;
-
-  color:#91a0ad;
+  color:var(--muted);
 
   text-transform:
     uppercase;
@@ -674,27 +744,9 @@ h3{
   letter-spacing:.12em;
 }
 
-.field input,
-.field select{
-  padding:13px;
-
-  border-radius:10px;
-
-  border:
-    1px solid #ffffff14;
-
-  background:#070b10;
-
-  color:#fff;
-
-  outline:none;
-}
-
 .full{
   grid-column:1/-1;
 }
-
-/* TABLE */
 
 .tablewrap{
   overflow:auto;
@@ -703,17 +755,15 @@ h3{
 
 .table{
   width:100%;
+  border-collapse:collapse;
 
-  border-collapse:
-    collapse;
-
-  min-width:900px;
+  min-width:950px;
 }
 
 .table th,
 .table td{
   padding:
-    13px 12px;
+    13px 11px;
 
   border-bottom:
     1px solid #ffffff0d;
@@ -725,8 +775,7 @@ h3{
 }
 
 .table th{
-  font-size:11px;
-
+  font-size:10px;
   color:#83909b;
 
   text-transform:
@@ -735,68 +784,48 @@ h3{
   letter-spacing:.1em;
 }
 
-/* FEE BADGES */
-
-.badge{
-  display:inline-flex;
-
-  padding:
-    7px 9px;
-
-  border-radius:
-    999px;
-
-  font-size:11px;
-
-  font-weight:900;
-}
-
-.green{
+.tag.green{
   background:#b8ff3d20;
-  color:#b8ff3d;
+  color:var(--lime);
 }
 
-.yellow{
+.tag.yellow{
   background:#ffd34e22;
-  color:#ffd34e;
+  color:var(--yellow);
 }
 
-.orange{
+.tag.orange{
   background:#ff9f4322;
-  color:#ff9f43;
+  color:var(--orange);
 }
 
-.red{
+.tag.red{
   background:#ff665722;
   color:#ff8a7f;
 }
-
-/* MEMBER */
 
 .memberhero{
   display:grid;
 
   grid-template-columns:
-    1.3fr .7fr;
+    1.2fr .8fr;
 
   gap:16px;
 }
 
-.big{
+.bigstat{
   font-family:
     'Barlow Condensed';
 
   font-size:130px;
 
-  font-weight:900;
-
   line-height:.75;
 
-  color:#b8ff3d;
+  color:var(--lime);
 
   text-shadow:
     0 0 50px
-    #b8ff3d20;
+    #b8ff3d25;
 }
 
 .progress{
@@ -815,22 +844,26 @@ h3{
   background:
     linear-gradient(
       90deg,
-      #b8ff3d,
-      #40e7ff
+      var(--lime),
+      var(--cyan)
     );
 
-  transition:
-    1s;
-
-  width:0;
+  transition:1s;
 }
 
-.mini{
-  font-size:12px;
-  color:#91a0ad;
-}
+.footer{
+  text-align:center;
 
-/* TOAST */
+  padding:
+    25px 15px 40px;
+
+  color:#687580;
+
+  font-size:11px;
+
+  border-top:
+    1px solid var(--line);
+}
 
 .toast{
   position:fixed;
@@ -841,7 +874,7 @@ h3{
   background:#111820;
 
   border:
-    1px solid #ffffff18;
+    1px solid var(--line);
 
   padding:
     14px 17px;
@@ -851,17 +884,56 @@ h3{
   z-index:100;
 
   box-shadow:
-    0 20px 60px
-    #0008;
+    0 20px 60px #0008;
 }
 
-/* ANIMATION */
+.sticker{
+  position:absolute;
+
+  width:55px;
+  height:55px;
+
+  border:
+    1px solid #ffffff18;
+
+  border-radius:15px;
+
+  background:#ffffff08;
+
+  backdrop-filter:
+    blur(8px);
+
+  display:grid;
+  place-items:center;
+
+  font-size:25px;
+
+  animation:
+    float 4s ease-in-out infinite;
+}
+
+.s1{
+  top:12%;
+  right:10%;
+}
+
+.s2{
+  bottom:18%;
+  left:8%;
+  animation-delay:1s;
+}
+
+.s3{
+  top:48%;
+  right:2%;
+  animation-delay:2s;
+}
 
 @keyframes float{
 
   50%{
     transform:
-      translateY(-20px)
+      translateY(-18px)
       rotateY(12deg);
   }
 
@@ -876,9 +948,7 @@ h3{
 
 }
 
-/* MOBILE */
-
-@media(max-width:850px){
+@media(max-width:900px){
 
   .hero,
   .memberhero{
@@ -886,13 +956,15 @@ h3{
   }
 
   .stage{
-    height:400px;
+    height:420px;
     order:-1;
   }
 
   .cards,
+  .grid,
   .formgrid{
-    grid-template-columns:1fr;
+    grid-template-columns:
+      1fr 1fr;
   }
 
   .head{
@@ -900,12 +972,22 @@ h3{
     flex-direction:column;
   }
 
-  .head h1{
-    font-size:52px;
+  .title{
+    font-size:80px;
   }
 
-  .big{
+  .bigstat{
     font-size:90px;
+  }
+
+}
+
+@media(max-width:560px){
+
+  .cards,
+  .grid,
+  .formgrid{
+    grid-template-columns:1fr;
   }
 
   .top{
@@ -914,7 +996,15 @@ h3{
   }
 
   .title{
-    font-size:78px;
+    font-size:68px;
+  }
+
+  .authbox .glass{
+    padding:25px;
+  }
+
+  .head h1{
+    font-size:52px;
   }
 
 }
@@ -929,59 +1019,41 @@ h3{
 
 <script>
 
-const APP=
+var token=
+  localStorage.getItem('tg_token')||'';
+
+var role=
+  localStorage.getItem('tg_role')||'';
+
+var APP=
   document.getElementById('app');
 
-let token=
-  localStorage.tg_token||'';
 
-let role=
-  localStorage.tg_role||'';
+function shell(x){
 
-/*
-  The SVG is inserted as a normal JavaScript
-  template string. It is deliberately generated
-  by the server so nested HTML does not break
-  the main server.js template literal.
-*/
-
-const LOGO=\`${logo}\`;
-
-/* =========================================================
-   CLIENT HELPERS
-========================================================= */
-
-const esc=v=>
-  String(v??'')
-  .replace(
-    /[&<>"']/g,
-    c=>({
-      '&':'&amp;',
-      '<':'&lt;',
-      '>':'&gt;',
-      '"':'&quot;',
-      "'":'&#39;'
-    }[c])
-  );
-
-const shell=x=>
   APP.innerHTML=
     '<div class="bg"></div>'+
     '<div class="noise"></div>'+
     x;
+}
 
-const footer=()=>
-  '<div class="footer">'+
-  'TheGym +91 70079 47859 · '+
-  'WhatsApp +91 78958 32442 · '+
-  '®CareerBoot ©2026'+
-  '</div>';
 
-const top=t=>
-  '<header class="top">'+
+function foot(){
+
+  return '<div class="footer">'+
+    'TheGym +91 70079 47859 · '+
+    'WhatsApp +91 78958 32442 · '+
+    '®CareerBoot ©2026'+
+    '</div>';
+}
+
+
+function top(t){
+
+  return '<header class="top">'+
 
     '<div class="brand">'+
-      LOGO+
+      '${LOGO}'+
       '<span>THEGYM</span>'+
     '</div>'+
 
@@ -998,67 +1070,101 @@ const top=t=>
     '</div>'+
 
   '</header>';
+}
 
-const toast=m=>{
 
-  const x=
+function toast(x){
+
+  var d=
     document.createElement('div');
 
-  x.className='toast';
+  d.className='toast';
 
-  x.textContent=m;
+  d.textContent=x;
 
-  document.body.appendChild(x);
+  document.body.appendChild(d);
 
   setTimeout(
-    ()=>x.remove(),
+    function(){
+      d.remove();
+    },
     2600
   );
-
-};
-
-/* =========================================================
-   API
-========================================================= */
-
-async function api(u,o={}){
-
-  o.headers={
-    ...(o.headers||{}),
-
-    Authorization:
-      'Bearer '+token,
-
-    'Content-Type':
-      'application/json'
-  };
-
-  const r=
-    await fetch(u,o);
-
-  const d=
-    await r.json();
-
-  if(!r.ok){
-
-    if(r.status===401){
-
-      localStorage.clear();
-
-      token='';
-      role='';
-
-      landing();
-    }
-
-    throw Error(
-      d.error||
-      'Request failed'
-    );
-  }
-
-  return d;
 }
+
+
+function fmt(x){
+
+  if(!x)return '-';
+
+  return new Date(
+    x+'T00:00:00'
+  ).toLocaleDateString(
+    'en-IN',
+    {
+      day:'2-digit',
+      month:'short',
+      year:'numeric'
+    }
+  );
+}
+
+
+function api(url,opt){
+
+  opt=opt||{};
+
+  opt.headers=
+    Object.assign(
+      {},
+      opt.headers||{},
+      {
+        Authorization:
+          'Bearer '+token,
+
+        'Content-Type':
+          'application/json'
+      }
+    );
+
+  return fetch(
+    url,
+    opt
+  ).then(
+    function(r){
+
+      return r.json()
+        .then(
+          function(d){
+
+            if(!r.ok){
+
+              if(
+                r.status===401
+              ){
+
+                localStorage.clear();
+
+                token='';
+                role='';
+
+                landing();
+              }
+
+              throw Error(
+                d.error||
+                'Request failed'
+              );
+            }
+
+            return d;
+          }
+        );
+
+    }
+  );
+}
+
 
 /* =========================================================
    LANDING
@@ -1071,7 +1177,7 @@ function landing(){
     '<header class="top">'+
 
       '<div class="brand">'+
-        LOGO+
+        '${LOGO}'+
         '<span>THEGYM</span>'+
       '</div>'+
 
@@ -1108,7 +1214,7 @@ function landing(){
           '</button>'+
 
           '<span class="pill">'+
-            '4K UI · 3D-STYLE · LIVE DATA'+
+            '4K UI · 4D-STYLE · LIVE DATA'+
           '</span>'+
 
         '</div>'+
@@ -1116,14 +1222,22 @@ function landing(){
       '</div>'+
 
       '<div class="stage">'+
+
         '<div class="orb"></div>'+
+
+        '<div class="sticker s1">🏋️</div>'+
+        '<div class="sticker s2">🔥</div>'+
+        '<div class="sticker s3">⚡</div>'+
+
       '</div>'+
 
     '</main>'+
 
-    footer()
+    foot()
+
   );
 }
+
 
 /* =========================================================
    LOGIN
@@ -1139,7 +1253,7 @@ function login(){
 
         '<div class="glass">'+
 
-          LOGO+
+          '${LOGO}'+
 
           '<div class="eyebrow" style="margin-top:20px">'+
             'THEGYM // SECURE ACCESS'+
@@ -1154,19 +1268,25 @@ function login(){
             'TheGym automatically routes you to the correct secure panel.'+
           '</p>'+
 
-          '<input id="key" class="key" '+
+          '<input '+
+            'id="key" '+
+            'class="key" '+
             'placeholder="SECRET KEY" '+
             'autocomplete="off">'+
 
           '<div style="margin-top:16px">'+
 
-            '<button class="btn primary" onclick="doLogin()">'+
+            '<button '+
+              'class="btn primary" '+
+              'onclick="doLogin()">'+
               'ACCESS THEGYM →'+
             '</button>'+
 
           '</div>'+
 
-          '<div id="err" class="mini" '+
+          '<div '+
+            'id="err" '+
+            'class="mini" '+
             'style="margin-top:15px">'+
           '</div>'+
 
@@ -1176,72 +1296,98 @@ function login(){
 
     '</main>'+
 
-    footer()
+    foot()
+
   );
 
   document
     .getElementById('key')
-    .onkeydown=e=>
-      e.key==='Enter'&&
-      doLogin();
+    .onkeydown=
+      function(e){
+
+        if(
+          e.key==='Enter'
+        ){
+          doLogin();
+        }
+
+      };
 }
+
 
 /* =========================================================
    LOGIN REQUEST
 ========================================================= */
 
-async function doLogin(){
+function doLogin(){
 
-  const err=
-    document.getElementById('err');
+  var e=
+    document.getElementById(
+      'err'
+    );
 
-  err.textContent='';
+  e.textContent='';
 
-  try{
+  fetch(
+    '/api/login',
+    {
+      method:'POST',
 
-    const r=
-      await fetch(
-        '/api/login',
-        {
-          method:'POST',
+      headers:{
+        'Content-Type':
+          'application/json'
+      },
 
-          headers:{
-            'Content-Type':
-              'application/json'
-          },
+      body:
+        JSON.stringify({
+          key:
+            document
+              .getElementById('key')
+              .value
+              .trim()
+        })
+    }
+  )
+  .then(
+    function(r){
 
-          body:
-            JSON.stringify({
-              key:
-                document
-                .getElementById('key')
-                .value
-                .trim()
-            })
-        }
-      );
+      return r.json()
+        .then(
+          function(d){
 
-    const d=
-      await r.json();
+            if(!r.ok)
+              throw Error(
+                d.error
+              );
 
-    if(!r.ok)
-      throw Error(d.error);
+            token=d.token;
+            role=d.role;
 
-    token=d.token;
-    role=d.role;
+            localStorage.setItem(
+              'tg_token',
+              token
+            );
 
-    localStorage.tg_token=token;
-    localStorage.tg_role=role;
+            localStorage.setItem(
+              'tg_role',
+              role
+            );
 
-    route();
+            route();
 
-  }catch(e){
+          }
+        );
 
-    err.textContent=
-      e.message;
-
-  }
+    }
+  )
+  .catch(
+    function(x){
+      e.textContent=
+        x.message;
+    }
+  );
 }
+
 
 /* =========================================================
    LOGOUT
@@ -1259,74 +1405,55 @@ function logout(){
           'Bearer '+token
       }
     }
-  ).finally(()=>{
+  )
+  .finally(
+    function(){
 
-    localStorage.clear();
+      localStorage.clear();
 
-    token='';
-    role='';
+      token='';
+      role='';
 
-    landing();
+      landing();
 
-  });
-}
-
-/* =========================================================
-   ROUTING
-========================================================= */
-
-function route(){
-
-  if(!token||!role)
-    return landing();
-
-  if(role==='member')
-    return memberPage();
-
-  if(role==='supreme')
-    return supremePage();
-
-  return adminPage();
-}
-
-/* =========================================================
-   DATE
-========================================================= */
-
-function fmt(x){
-
-  if(!x)return '-';
-
-  return new Date(
-    x+'T00:00:00'
-  ).toLocaleDateString(
-    'en-IN',
-    {
-      day:'2-digit',
-      month:'short',
-      year:'numeric'
     }
   );
 }
 
+
 /* =========================================================
-   FEE BADGE
+   ROUTER
 ========================================================= */
 
-function badge(s){
+function route(){
 
-  return '<span class="badge '+
-    s.tone+
-    '">'+
-    esc(s.status)+
-    '</span>';
+  if(!token){
+    return landing();
+  }
+
+  if(role==='admin'){
+    return admin();
+  }
+
+  if(role==='supreme'){
+    return supreme();
+  }
+
+  if(role==='member'){
+    return member();
+  }
+
+  localStorage.clear();
+
+  landing();
 }
 
+
 /* =========================================================
-   ADMIN PANEL
+   ADMIN
 ========================================================= */
 
-function adminPage(){
+function admin(){
 
   shell(
 
@@ -1345,7 +1472,7 @@ function adminPage(){
           '<h1>ADMIN PANEL</h1>'+
 
           '<p class="sub">'+
-            'Register members and maintain current performance data.'+
+            'Create members, manage their records and maintain live performance data.'+
           '</p>'+
 
         '</div>'+
@@ -1360,20 +1487,32 @@ function adminPage(){
         '</div>'+
 
         '<div class="glass stat">'+
-          '<small>MEMBER MANAGEMENT</small>'+
+          '<small>MEMBER SYSTEM</small>'+
           '<b>LIVE</b>'+
+        '</div>'+
+
+        '<div class="glass stat">'+
+          '<small>FEES</small>'+
+          '<b>₹500 / ₹700</b>'+
+        '</div>'+
+
+        '<div class="glass stat">'+
+          '<small>GROWTH</small>'+
+          '<b>LIVE %</b>'+
         '</div>'+
 
       '</div>'+
 
-      '<div class="actions" style="margin:16px 0">'+
+      '<div class="actions">'+
 
-        '<button class="btn primary" '+
+        '<button '+
+          'class="btn primary" '+
           'onclick="registerPage()">'+
           '+ MEMBERS REGISTER PAGE'+
         '</button>'+
 
-        '<button class="btn" '+
+        '<button '+
+          'class="btn" '+
           'onclick="profilePage()">'+
           'MEMBERS PROFILE PAGE'+
         '</button>'+
@@ -1384,90 +1523,35 @@ function adminPage(){
 
     '</main>'+
 
-    footer()
+    foot()
+
   );
 
-  loadMembers('content');
+  loadMembers(
+    'content'
+  );
 }
 
-/* =========================================================
-   MEMBER LIST
-========================================================= */
-
-async function loadMembers(id){
-
-  const box=
-    document.getElementById(id);
-
-  try{
-
-    const d=
-      await api('/api/members');
-
-    box.innerHTML=
-
-      '<div class="glass panel">'+
-
-        '<h2>MEMBERS</h2>'+
-
-        '<div class="tablewrap">'+
-
-          '<table class="table">'+
-
-            '<thead>'+
-              '<tr>'+
-                '<th>Name</th>'+
-                '<th>Joining</th>'+
-                '<th>Current</th>'+
-                '<th>Goal</th>'+
-                '<th>Growth</th>'+
-                '<th>Fees</th>'+
-              '</tr>'+
-            '</thead>'+
-
-            '<tbody>'+
-
-              d.members.map(
-                m=>
-                '<tr>'+
-                  '<td>'+esc(m.name)+'</td>'+
-                  '<td>'+fmt(m.joiningDate)+'</td>'+
-                  '<td>'+m.currentWeight+' kg</td>'+
-                  '<td>'+m.goalWeight+' kg</td>'+
-                  '<td>'+m.growth+'%</td>'+
-                  '<td>₹'+m.fee+'</td>'+
-                '</tr>'
-              ).join('')+
-
-            '</tbody>'+
-
-          '</table>'+
-
-        '</div>'+
-
-      '</div>';
-
-  }catch(e){
-
-    box.innerHTML=
-      '<div class="glass panel">'+
-      esc(e.message)+
-      '</div>';
-
-  }
-}
 
 /* =========================================================
-   MEMBER REGISTER
+   REGISTER PAGE
 ========================================================= */
 
 function registerPage(){
 
-  document.getElementById('content').innerHTML=
+  document.getElementById(
+    'content'
+  ).innerHTML=
 
     '<div class="glass panel">'+
 
-      '<h2>MEMBERS REGISTER</h2>'+
+      '<h2>'+
+        'MEMBERS REGISTER PAGE'+
+      '</h2>'+
+
+      '<p class="mini">'+
+        'Create a member and assign their individual Secret Key.'+
+      '</p>'+
 
       '<form id="reg" class="formgrid">'+
 
@@ -1477,7 +1561,7 @@ function registerPage(){
         '</div>'+
 
         '<div class="field">'+
-          '<label>Secret Key</label>'+
+          '<label>Assign Secret Key</label>'+
           '<input name="secretKey" required>'+
         '</div>'+
 
@@ -1494,8 +1578,12 @@ function registerPage(){
         '<div class="field">'+
           '<label>Goal Category</label>'+
           '<select name="goalCategory">'+
-            '<option>Loss</option>'+
-            '<option>Gain</option>'+
+            '<option value="Loss">'+
+              'Weight Loss'+
+            '</option>'+
+            '<option value="Gain">'+
+              'Weight Gain'+
+            '</option>'+
           '</select>'+
         '</div>'+
 
@@ -1517,7 +1605,7 @@ function registerPage(){
           '<input name="contact" required>'+
         '</div>'+
 
-        '<div class="field">'+
+        '<div class="field full">'+
           '<label>Last Fees Submission Date</label>'+
           '<input name="lastFeeDate" type="date" required>'+
         '</div>'+
@@ -1528,7 +1616,9 @@ function registerPage(){
             'CREATE MEMBER'+
           '</button>'+
 
-          '<button type="button" class="btn" '+
+          '<button '+
+            'type="button" '+
+            'class="btn" '+
             'onclick="profilePage()">'+
             'VIEW PROFILES'+
           '</button>'+
@@ -1539,101 +1629,410 @@ function registerPage(){
 
     '</div>';
 
-  document
-    .getElementById('reg')
-    .onsubmit=async e=>{
+  document.getElementById(
+    'reg'
+  ).onsubmit=
+    function(e){
 
       e.preventDefault();
 
-      const o=
+      var o=
         Object.fromEntries(
           new FormData(e).entries()
         );
 
-      try{
+      api(
+        '/api/members',
+        {
+          method:'POST',
 
-        await api(
-          '/api/members',
-          {
-            method:'POST',
-            body:
-              JSON.stringify(o)
-          }
-        );
+          body:
+            JSON.stringify(o)
+        }
+      )
+      .then(
+        function(){
 
-        toast(
-          'Member created successfully'
-        );
+          toast(
+            'Member created successfully'
+          );
 
-        e.target.reset();
+          e.target.reset();
 
-        loadMembers('content');
+          loadMembers(
+            'content'
+          );
 
-      }catch(x){
+        }
+      )
+      .catch(
+        function(x){
+          toast(x.message);
+        }
+      );
 
-        toast(x.message);
-
-      }
     };
 }
+
+
+/* =========================================================
+   MEMBER LIST
+========================================================= */
+
+function loadMembers(id){
+
+  api(
+    '/api/members'
+  )
+  .then(
+    function(d){
+
+      document.getElementById(
+        id
+      ).innerHTML=
+
+        '<div class="glass panel">'+
+
+          '<h2>MEMBERS</h2>'+
+
+          '<div class="tablewrap">'+
+
+            '<table class="table">'+
+
+              '<thead>'+
+
+                '<tr>'+
+
+                  '<th>Name</th>'+
+                  '<th>Joining Date</th>'+
+                  '<th>Current Weight</th>'+
+                  '<th>Goal</th>'+
+                  '<th>Growth</th>'+
+                  '<th>Fees</th>'+
+
+                '</tr>'+
+
+              '</thead>'+
+
+              '<tbody>'+
+
+                d.members
+                  .map(
+                    function(m){
+
+                      return '<tr>'+
+
+                        '<td>'+
+                          esc(m.name)+
+                        '</td>'+
+
+                        '<td>'+
+                          fmt(m.joiningDate)+
+                        '</td>'+
+
+                        '<td>'+
+                          m.currentWeight+
+                          ' kg'+
+                        '</td>'+
+
+                        '<td>'+
+                          m.goalCategory+
+                          ' · '+
+                          m.goalWeight+
+                          ' kg'+
+                        '</td>'+
+
+                        '<td>'+
+                          m.growth+
+                          '%'+
+                        '</td>'+
+
+                        '<td>'+
+                          '₹'+
+                          m.fee+
+                        '</td>'+
+
+                      '</tr>';
+
+                    }
+                  )
+                  .join('')+
+
+              '</tbody>'+
+
+            '</table>'+
+
+          '</div>'+
+
+        '</div>';
+
+    }
+  )
+  .catch(
+    function(x){
+
+      document.getElementById(
+        id
+      ).innerHTML=
+
+        '<div class="glass panel">'+
+          esc(x.message)+
+        '</div>';
+
+    }
+  );
+}
+
 
 /* =========================================================
    MEMBER PROFILE
 ========================================================= */
 
-async function profilePage(){
+function profilePage(){
 
-  const d=
-    await api('/api/members');
+  api(
+    '/api/members'
+  )
+  .then(
+    function(d){
 
-  document.getElementById(
-    'content'
-  ).innerHTML=
+      document.getElementById(
+        'content'
+      ).innerHTML=
 
-    '<div class="glass panel">'+
+        '<div class="glass panel">'+
 
-      '<h2>MEMBERS PROFILE</h2>'+
+          '<h2>'+
+            'MEMBERS PROFILE PAGE'+
+          '</h2>'+
 
-      '<div class="tablewrap">'+
+          '<div class="tablewrap">'+
 
-        '<table class="table">'+
+            '<table class="table">'+
 
-          '<thead>'+
-            '<tr>'+
-              '<th>Name</th>'+
-              '<th>Joining Date</th>'+
-              '<th>Current Day Weight</th>'+
-              '<th>Joining Weight</th>'+
-              '<th>Growth Status</th>'+
-              '<th>Update</th>'+
-            '</tr>'+
-          '</thead>'+
+              '<thead>'+
 
-          '<tbody>'+
+                '<tr>'+
 
-            d.members.map(
-              m=>
+                  '<th>Name</th>'+
+                  '<th>Joining Date</th>'+
+                  '<th>Current Day Weight</th>'+
+                  '<th>Joining Date Weight</th>'+
+                  '<th>Goal</th>'+
+                  '<th>Growth Status</th>'+
+                  '<th>Last Fee Date</th>'+
+                  '<th>Update</th>'+
 
-              '<tr>'+
+                '</tr>'+
+
+              '</thead>'+
+
+              '<tbody>'+
+
+                d.members
+                  .map(
+                    function(m){
+
+                      return '<tr>'+
+
+                        '<td>'+
+                          esc(m.name)+
+                        '</td>'+
+
+                        '<td>'+
+                          fmt(m.joiningDate)+
+                        '</td>'+
+
+                        '<td>'+
+
+                          '<input '+
+                            'id="w_'+m.id+'" '+
+                            'value="'+m.currentWeight+'" '+
+                            'type="number" '+
+                            'step="0.1" '+
+                            'style="width:100px">'+
+
+                        '</td>'+
+
+                        '<td>'+
+                          m.joiningWeight+
+                          ' kg'+
+                        '</td>'+
+
+                        '<td>'+
+                          m.goalCategory+
+                          ' · '+
+                          m.goalWeight+
+                          ' kg'+
+                        '</td>'+
+
+                        '<td>'+
+                          m.growth+
+                          '%'+
+                        '</td>'+
+
+                        '<td>'+
+
+                          '<input '+
+                            'id="f_'+m.id+'" '+
+                            'value="'+m.lastFeeDate+'" '+
+                            'type="date" '+
+                            'style="width:145px">'+
+
+                        '</td>'+
+
+                        '<td>'+
+
+                          '<button '+
+                            'class="btn" '+
+                            'onclick="updateMember(\''+
+                              m.id+
+                            '\')">'+
+                            'SAVE'+
+                          '</button>'+
+
+                        '</td>'+
+
+                      '</tr>';
+
+                    }
+                  )
+                  .join('')+
+
+              '</tbody>'+
+
+            '</table>'+
+
+          '</div>'+
+
+        '</div>';
+
+    }
+  );
+}
+
+
+/* =========================================================
+   UPDATE MEMBER
+========================================================= */
+
+function updateMember(id){
+
+  api(
+    '/api/members/'+id,
+    {
+      method:'PATCH',
+
+      body:
+        JSON.stringify({
+          currentWeight:
+            document.getElementById(
+              'w_'+id
+            ).value,
+
+          lastFeeDate:
+            document.getElementById(
+              'f_'+id
+            ).value
+        })
+    }
+  )
+  .then(
+    function(){
+
+      toast(
+        'Member profile updated'
+      );
+
+      profilePage();
+
+    }
+  )
+  .catch(
+    function(x){
+      toast(x.message);
+    }
+  );
+}
+
+
+/* =========================================================
+   FEE BADGE
+========================================================= */
+
+function badge(s){
+
+  return '<span class="tag '+
+    s.cls+
+    '">'+
+    esc(s.text)+
+    '</span>';
+}
+
+
+/* =========================================================
+   SUPREME ADMIN
+========================================================= */
+
+function supreme(){
+
+  api(
+    '/api/report'
+  )
+  .then(
+    function(d){
+
+      var overdue=
+        d.members.filter(
+          function(m){
+            return m.feeStatus.gone>30;
+          }
+        ).length;
+
+      var avg=
+        d.members.length
+          ?Math.round(
+            d.members.reduce(
+              function(a,m){
+                return a+m.growth;
+              },
+              0
+            )/
+            d.members.length*
+            10
+          )/10
+          :0;
+
+      var rows=
+        d.members
+          .map(
+            function(m,i){
+
+              return '<tr>'+
 
                 '<td>'+
-                  esc(m.name)+
+                  (i+1)+
                 '</td>'+
 
                 '<td>'+
-                  fmt(m.joiningDate)+
+                  '<b>'+
+                    esc(m.name)+
+                  '</b>'+
                 '</td>'+
 
                 '<td>'+
-                  '<input id="w_'+m.id+'" '+
-                  'value="'+m.currentWeight+'" '+
-                  'type="number" step="0.1" '+
-                  'style="width:100px">'+
+                  fmt(d.today)+
                 '</td>'+
 
                 '<td>'+
-                  m.joiningWeight+
-                  ' kg'+
+                  '₹'+
+                  m.fee+
+                '</td>'+
+
+                '<td>'+
+                  badge(
+                    m.feeStatus
+                  )+
                 '</td>'+
 
                 '<td>'+
@@ -1642,341 +2041,444 @@ async function profilePage(){
                 '</td>'+
 
                 '<td>'+
-                  '<button class="btn" '+
-                  'onclick="updateWeight(\''+
-                  m.id+
-                  '\')">'+
-                  'SAVE'+
-                  '</button>'+
+                  esc(m.contact)+
                 '</td>'+
 
-              '</tr>'
-            ).join('')+
+              '</tr>';
 
-          '</tbody>'+
+            }
+          )
+          .join('');
 
-        '</table>'+
+      shell(
 
-      '</div>'+
+        top(
+          'SUPREME ADMIN'
+        )+
 
-    '</div>';
-}
+        '<main class="wrap dash">'+
 
-/* =========================================================
-   UPDATE WEIGHT
-========================================================= */
+          '<div class="head">'+
 
-async function updateWeight(id){
+            '<div>'+
 
-  const v=
-    document.getElementById(
-      'w_'+id
-    ).value;
+              '<div class="eyebrow">'+
+                'SUPREME COMMAND // '+
+                fmt(d.today)+
+              '</div>'+
 
-  try{
+              '<h1>'+
+                'REPORT DASHBOARD'+
+              '</h1>'+
 
-    await api(
-      '/api/members/'+id,
-      {
-        method:'PATCH',
+              '<p class="sub">'+
+                'Daily-to-monthly member report. '+
+                'Date refreshes with every login.'+
+              '</p>'+
 
-        body:
-          JSON.stringify({
-            currentWeight:v
-          })
-      }
-    );
+            '</div>'+
 
-    toast(
-      'Weight updated'
-    );
-
-    profilePage();
-
-  }catch(e){
-
-    toast(e.message);
-
-  }
-}
-
-/* =========================================================
-   SUPREME ADMIN
-========================================================= */
-
-async function supremePage(){
-
-  const d=
-    await api('/api/report');
-
-  shell(
-
-    top('SUPREME ADMIN')+
-
-    '<main class="wrap dash">'+
-
-      '<div class="head">'+
-
-        '<div>'+
-
-          '<div class="eyebrow">'+
-            'SUPREME CONTROL // DAILY REPORT'+
           '</div>'+
 
-          '<h1>REPORT DASHBOARD</h1>'+
+          '<div class="cards">'+
 
-          '<p class="sub">'+
-            'Daily-to-monthly member fees and growth overview. '+
-            'Date refreshes on every dashboard login.'+
-          '</p>'+
+            '<div class="glass stat">'+
+              '<small>ACTIVE MEMBERS</small>'+
+              '<b>'+
+                d.members.length+
+              '</b>'+
+            '</div>'+
 
-        '</div>'+
+            '<div class="glass stat">'+
+              '<small>AVERAGE GROWTH</small>'+
+              '<b>'+
+                avg+
+                '%'+
+              '</b>'+
+            '</div>'+
 
-      '</div>'+
+            '<div class="glass stat">'+
+              '<small>OVERDUE</small>'+
+              '<b>'+
+                overdue+
+              '</b>'+
+            '</div>'+
 
-      '<div class="cards">'+
+            '<div class="glass stat">'+
+              '<small>FEE OPTIONS</small>'+
+              '<b>'+
+                '₹500 / ₹700'+
+              '</b>'+
+            '</div>'+
 
-        '<div class="glass stat">'+
-          '<small>MEMBERS</small>'+
-          '<b>'+
-            d.members.length+
-          '</b>'+
-        '</div>'+
+          '</div>'+
 
-        '<div class="glass stat">'+
-          '<small>TODAY</small>'+
-          '<b>'+
-            fmt(d.today)+
-          '</b>'+
-        '</div>'+
+          '<div class="glass panel">'+
 
-        '<div class="glass stat">'+
-          '<small>TOTAL PLAN VALUE</small>'+
-          '<b>₹'+
-            d.members.reduce(
-              (a,m)=>a+m.fee,
-              0
-            )+
-          '</b>'+
-        '</div>'+
+            '<div class="tablewrap">'+
 
-        '<div class="glass stat">'+
-          '<small>OVERDUE</small>'+
-          '<b>'+
-            d.members.filter(
-              m=>m.feeStatus.daysGone>30
-            ).length+
-          '</b>'+
-        '</div>'+
+              '<table class="table">'+
 
-      '</div>'+
+                '<thead>'+
 
-      '<div class="glass panel">'+
+                  '<tr>'+
 
-        '<div class="tablewrap">'+
+                    '<th>SL No.</th>'+
+                    '<th>Name</th>'+
+                    '<th>Date</th>'+
+                    '<th>Fees</th>'+
+                    '<th>Status</th>'+
+                    '<th>Growth</th>'+
+                    '<th>Contact Number</th>'+
 
-          '<table class="table">'+
+                  '</tr>'+
 
-            '<thead>'+
+                '</thead>'+
 
-              '<tr>'+
+                '<tbody>'+
 
-                '<th>SL No.</th>'+
-                '<th>Name</th>'+
-                '<th>Date</th>'+
-                '<th>Fees</th>'+
-                '<th>Status</th>'+
-                '<th>Growth</th>'+
-                '<th>Contact</th>'+
+                  (
+                    rows||
+                    '<tr>'+
+                      '<td colspan="7">'+
+                        'No members yet.'+
+                      '</td>'+
+                    '</tr>'
+                  )+
 
-              '</tr>'+
+                '</tbody>'+
 
-            '</thead>'+
+              '</table>'+
 
-            '<tbody>'+
+            '</div>'+
 
-              d.members.map(
-                (m,i)=>
+          '</div>'+
 
-                '<tr>'+
+        '</main>'+
 
-                  '<td>'+
-                    (i+1)+
-                  '</td>'+
+        foot()
 
-                  '<td>'+
-                    esc(m.name)+
-                  '</td>'+
+      );
 
-                  '<td>'+
-                    fmt(d.today)+
-                  '</td>'+
-
-                  '<td>'+
-                    '₹'+m.fee+
-                  '</td>'+
-
-                  '<td>'+
-                    badge(m.feeStatus)+
-                  '</td>'+
-
-                  '<td>'+
-                    m.growth+
-                    '%'+
-                  '</td>'+
-
-                  '<td>'+
-                    esc(m.contact)+
-                  '</td>'+
-
-                '</tr>'
-
-              ).join('')+
-
-            '</tbody>'+
-
-          '</table>'+
-
-        '</div>'+
-
-      '</div>'+
-
-    '</main>'+
-
-    footer()
+    }
+  )
+  .catch(
+    function(x){
+      toast(x.message);
+    }
   );
 }
+
 
 /* =========================================================
    MEMBER PERFORMANCE
 ========================================================= */
 
-async function memberPage(){
+function member(){
 
-  const d=
-    await api('/api/me');
+  api(
+    '/api/me'
+  )
+  .then(
+    function(d){
 
-  const m=d.member;
+      var m=
+        d.member;
 
-  const p=
-    Math.max(
-      0,
-      Math.min(
-        100,
-        m.growth
-      )
-    );
+      var p=
+        Math.max(
+          0,
+          Math.min(
+            100,
+            m.growth
+          )
+        );
 
-  shell(
+      shell(
 
-    top('MEMBER PERFORMANCE')+
+        top(
+          'MEMBER PERFORMANCE'
+        )+
 
-    '<main class="wrap dash">'+
+        '<main class="wrap dash">'+
 
-      '<div class="eyebrow">'+
-        'PERSONAL PERFORMANCE // LIVE'+
-      '</div>'+
+          '<div class="memberhero">'+
 
-      '<div class="memberhero">'+
+            '<div class="glass">'+
 
-        '<div class="glass panel">'+
+              '<div class="eyebrow">'+
+                'YOUR PERFORMANCE // LIVE'+
+              '</div>'+
 
-          '<div class="mini">'+
-            'WELCOME BACK'+
-          '</div>'+
+              '<h1 style="font-size:72px;margin:10px 0">'+
+                esc(m.name)+
+              '</h1>'+
 
-          '<h1 style="font-size:72px;margin:8px 0">'+
-            esc(m.name)+
-          '</h1>'+
+              '<p class="mini">'+
+                'Goal: '+
+                esc(m.goalCategory)+
+                ' · Target '+
+                m.goalWeight+
+                ' kg'+
+              '</p>'+
 
-          '<div class="mini">'+
-            'GOAL: '+
-            m.goalCategory+
-            ' · TARGET '+
-            m.goalWeight+
-            ' KG'+
-          '</div>'+
+              '<div style="margin:50px 0 14px">'+
 
-          '<div class="big">'+
-            p+
-            '%'+
-          '</div>'+
+                '<div class="mini">'+
+                  'GROWTH STATUS'+
+                '</div>'+
 
-          '<div class="mini">'+
-            'GROWTH STATUS'+
-          '</div>'+
+                '<div class="bigstat">'+
+                  m.growth+
+                  '%'+
+                '</div>'+
 
-          '<div class="progress" style="margin-top:14px">'+
+              '</div>'+
 
-            '<div class="bar" '+
-              'style="width:'+p+'%">'+
+              '<div class="progress">'+
+
+                '<div '+
+                  'class="bar" '+
+                  'style="width:'+
+                  p+
+                  '%">'+
+                '</div>'+
+
+              '</div>'+
+
+              '<p class="mini" style="margin-top:14px">'+
+
+                'Current: '+
+                '<b style="color:white">'+
+                  m.currentWeight+
+                  ' kg'+
+                '</b>'+
+
+                ' · Joined: '+
+                m.joiningWeight+
+                ' kg'+
+
+                ' · Target: '+
+                m.goalWeight+
+                ' kg'+
+
+              '</p>'+
+
+            '</div>'+
+
+            '<div '+
+              'class="glass" '+
+              'style="position:relative;overflow:hidden">'+
+
+              '<div class="eyebrow">'+
+                'THEGYM ENERGY'+
+              '</div>'+
+
+              '<h2 style="font-size:46px;margin:10px 0">'+
+                'TRAIN.<br>'+
+                'TRACK.<br>'+
+                'TRANSFORM.'+
+              '</h2>'+
+
+              '<p class="sub">'+
+                'Your dashboard updates from the latest weight recorded by TheGym administration.'+
+              '</p>'+
+
+              '<div '+
+                'id="miniCanvas" '+
+                'style="height:270px">'+
+              '</div>'+
+
+              '<div class="sticker s1">🏋️</div>'+
+              '<div class="sticker s2">🔥</div>'+
+              '<div class="sticker s3">⚡</div>'+
+
             '</div>'+
 
           '</div>'+
 
-        '</div>'+
+        '</main>'+
 
-        '<div class="glass panel">'+
+        foot()
 
-          '<h2>YOUR STATS</h2>'+
+      );
 
-          '<p>'+
-            'Joining Weight '+
-            '<b style="float:right">'+
-              m.joiningWeight+
-              ' kg'+
-            '</b>'+
-          '</p>'+
+      animateMini();
 
-          '<p>'+
-            'Current Weight '+
-            '<b style="float:right">'+
-              m.currentWeight+
-              ' kg'+
-            '</b>'+
-          '</p>'+
-
-          '<p>'+
-            'Goal Weight '+
-            '<b style="float:right">'+
-              m.goalWeight+
-              ' kg'+
-            '</b>'+
-          '</p>'+
-
-          '<p>'+
-            'Plan Fee '+
-            '<b style="float:right">'+
-              '₹'+
-              m.fee+
-            '</b>'+
-          '</p>'+
-
-          '<p>'+
-            'Joining Date '+
-            '<b style="float:right">'+
-              fmt(m.joiningDate)+
-            '</b>'+
-          '</p>'+
-
-        '</div>'+
-
-      '</div>'+
-
-    '</main>'+
-
-    footer()
+    }
+  )
+  .catch(
+    function(x){
+      toast(x.message);
+    }
   );
 }
 
+
 /* =========================================================
-   INITIAL ROUTE
+   MEMBER ANIMATION
 ========================================================= */
 
-if(token)
-  route();
-else
-  landing();
+function animateMini(){
+
+  var el=
+    document.getElementById(
+      'miniCanvas'
+    );
+
+  if(!el){
+    return;
+  }
+
+  var c=
+    document.createElement(
+      'canvas'
+    );
+
+  el.appendChild(c);
+
+  var x=
+    c.getContext('2d');
+
+  var pts=[];
+
+  function size(){
+
+    c.width=
+      el.clientWidth*
+      devicePixelRatio;
+
+    c.height=
+      el.clientHeight*
+      devicePixelRatio;
+
+    x.setTransform(
+      devicePixelRatio,
+      0,
+      0,
+      devicePixelRatio,
+      0,
+      0
+    );
+  }
+
+  size();
+
+  addEventListener(
+    'resize',
+    size
+  );
+
+  for(
+    var i=0;
+    i<110;
+    i++
+  ){
+
+    pts.push({
+
+      a:
+        Math.random()*
+        Math.PI*
+        2,
+
+      r:
+        20+
+        Math.random()*
+        110,
+
+      v:
+        .002+
+        Math.random()*
+        .004
+
+    });
+
+  }
+
+  function frame(t){
+
+    x.clearRect(
+      0,
+      0,
+      el.clientWidth,
+      el.clientHeight
+    );
+
+    var cx=
+      el.clientWidth/2;
+
+    var cy=
+      el.clientHeight/2;
+
+    pts.forEach(
+      function(p){
+
+        p.a+=p.v;
+
+        var r=
+          p.r+
+          Math.sin(
+            t*.002+
+            p.a*4
+          )*
+          15;
+
+        var px=
+          cx+
+          Math.cos(
+            p.a+
+            t*.0004
+          )*
+          r;
+
+        var py=
+          cy+
+          Math.sin(
+            p.a*1.4+
+            t*.0003
+          )*
+          r*
+          .7;
+
+        x.fillStyle=
+          p.a%2<1
+            ?'#b8ff3d'
+            :'#40e7ff';
+
+        x.globalAlpha=.55;
+
+        x.beginPath();
+
+        x.arc(
+          px,
+          py,
+          1.7,
+          0,
+          Math.PI*2
+        );
+
+        x.fill();
+
+      }
+    );
+
+    requestAnimationFrame(
+      frame
+    );
+  }
+
+  requestAnimationFrame(
+    frame
+  );
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
+route();
 
 </script>
 
@@ -1984,9 +2486,21 @@ else
 
 </html>`;
 
-/* =========================================================
-   SEND FRONTEND
-========================================================= */
+
+/*
+  IMPORTANT FIX
+
+  The logo is inserted AFTER the HTML template has been
+  created. This prevents nested JavaScript template literals
+  from breaking server.js.
+*/
+
+const frontend=
+  html.replaceAll(
+    '${LOGO}',
+    logo
+  );
+
 
 function sendHTML(res){
 
@@ -2001,23 +2515,17 @@ function sendHTML(res){
     }
   );
 
-  res.end(html);
+  res.end(
+    frontend
+  );
 }
+
 
 /* =========================================================
    MONGODB
 ========================================================= */
 
 async function start(){
-
-  if(!URI){
-
-    console.error(
-      'MONGODB_URI is missing'
-    );
-
-    process.exit(1);
-  }
 
   const client=
     new MongoClient(
@@ -2050,11 +2558,18 @@ async function start(){
     }
   );
 
+  await members.createIndex(
+    {
+      createdAt:1
+    }
+  );
+
   console.log(
     'MongoDB connected:',
     DB
   );
 }
+
 
 /* =========================================================
    SERVER
@@ -2066,20 +2581,23 @@ const server=
 
       try{
 
-        const u=
+        const url=
           new URL(
             req.url,
             'http://localhost'
           );
 
-        /* HEALTH */
+
+        /* =====================================================
+           HEALTH
+        ===================================================== */
 
         if(
-          u.pathname===
+          url.pathname===
           '/health'
         ){
 
-          return j(
+          return send(
             res,
             200,
             {
@@ -2090,15 +2608,16 @@ const server=
           );
         }
 
-        /* ===================================================
+
+        /* =====================================================
            LOGIN
-        =================================================== */
+        ===================================================== */
 
         if(
-          u.pathname===
-          '/api/login' &&
+          url.pathname===
+            '/api/login' &&
           req.method===
-          'POST'
+            'POST'
         ){
 
           const b=
@@ -2112,21 +2631,28 @@ const server=
           let role;
           let identity='';
 
+
           if(
             key===
             SUPREME_KEY
           ){
 
-            role='supreme';
+            role=
+              'supreme';
 
-          }else if(
+          }
+
+          else if(
             key===
             ADMIN_KEY
           ){
 
-            role='admin';
+            role=
+              'admin';
 
-          }else{
+          }
+
+          else{
 
             const m=
               await members.findOne(
@@ -2140,9 +2666,10 @@ const server=
                 }
               );
 
+
             if(!m){
 
-              return j(
+              return send(
                 res,
                 401,
                 {
@@ -2150,20 +2677,27 @@ const server=
                     'Invalid Secret Key'
                 }
               );
+
             }
 
-            role='member';
+
+            role=
+              'member';
 
             identity=
               String(
                 m._id
               );
+
           }
 
+
           const t=
-            crypto
-            .randomBytes(32)
-            .toString('hex');
+            token(
+              role,
+              identity
+            );
+
 
           sessions.set(
             t,
@@ -2175,7 +2709,8 @@ const server=
             }
           );
 
-          return j(
+
+          return send(
             res,
             200,
             {
@@ -2183,32 +2718,32 @@ const server=
               role
             }
           );
+
         }
 
-        /* ===================================================
+
+        /* =====================================================
            LOGOUT
-        =================================================== */
+        ===================================================== */
 
         if(
-          u.pathname===
-          '/api/logout' &&
+          url.pathname===
+            '/api/logout' &&
           req.method===
-          'POST'
+            'POST'
         ){
 
-          const t=
+          sessions.delete(
             (
               req.headers.authorization||
               ''
-            )
-            .replace(
+            ).replace(
               /^Bearer\s+/i,
               ''
-            );
+            )
+          );
 
-          sessions.delete(t);
-
-          return j(
+          return send(
             res,
             200,
             {
@@ -2217,15 +2752,16 @@ const server=
           );
         }
 
-        /* ===================================================
-           ALL MEMBERS
-        =================================================== */
+
+        /* =====================================================
+           GET MEMBERS
+        ===================================================== */
 
         if(
-          u.pathname===
-          '/api/members' &&
+          url.pathname===
+            '/api/members' &&
           req.method===
-          'GET'
+            'GET'
         ){
 
           if(
@@ -2237,36 +2773,43 @@ const server=
                 'supreme'
               ]
             )
-          )
+          ){
             return;
+          }
+
 
           const arr=
             await members
-            .find({})
-            .sort({
-              createdAt:1
-            })
-            .toArray();
+              .find({})
+              .sort({
+                createdAt:1
+              })
+              .toArray();
 
-          return j(
+
+          return send(
             res,
             200,
             {
               members:
-                arr.map(clean)
+                arr.map(
+                  clean
+                )
             }
           );
+
         }
 
-        /* ===================================================
+
+        /* =====================================================
            CREATE MEMBER
-        =================================================== */
+        ===================================================== */
 
         if(
-          u.pathname===
-          '/api/members' &&
+          url.pathname===
+            '/api/members' &&
           req.method===
-          'POST'
+            'POST'
         ){
 
           if(
@@ -2278,13 +2821,16 @@ const server=
                 'supreme'
               ]
             )
-          )
+          ){
             return;
+          }
+
 
           const b=
             await body(req);
 
-          const reqs=[
+
+          const required=[
             'name',
             'secretKey',
             'joiningDate',
@@ -2296,8 +2842,9 @@ const server=
             'lastFeeDate'
           ];
 
+
           for(
-            const k of reqs
+            const k of required
           ){
 
             if(
@@ -2306,7 +2853,7 @@ const server=
               ).trim()===''
             ){
 
-              return j(
+              return send(
                 res,
                 400,
                 {
@@ -2315,8 +2862,11 @@ const server=
                     k
                 }
               );
+
             }
+
           }
+
 
           const name=
             String(
@@ -2346,22 +2896,21 @@ const server=
 
           const goalCategory=
             b.goalCategory===
-            'Gain'
-              ?'Gain'
-              :'Loss';
+              'Gain'
+                ?'Gain'
+                :'Loss';
 
           const fee=
             +b.fee===
-            700
-              ?700
-              :500;
+              700
+                ?700
+                :500;
 
           const contact=
             String(
               b.contact
             ).trim();
 
-          /* DATE / WEIGHT VALIDATION */
 
           if(
             !/^\d{4}-\d{2}-\d{2}$/
@@ -2383,7 +2932,7 @@ const server=
             goalWeight<=0
           ){
 
-            return j(
+            return send(
               res,
               400,
               {
@@ -2391,9 +2940,13 @@ const server=
                   'Please enter valid dates and positive weights.'
               }
             );
+
           }
 
-          /* REALISTIC LOSS GOAL */
+
+          /* ===================================================
+             REALISTIC GOAL VALIDATION
+          =================================================== */
 
           if(
             goalCategory===
@@ -2402,7 +2955,7 @@ const server=
               joiningWeight
           ){
 
-            return j(
+            return send(
               res,
               400,
               {
@@ -2410,9 +2963,9 @@ const server=
                   'For Weight Loss, Goal Weight should be lower than Joining Weight.'
               }
             );
+
           }
 
-          /* REALISTIC GAIN GOAL */
 
           if(
             goalCategory===
@@ -2421,7 +2974,7 @@ const server=
               joiningWeight
           ){
 
-            return j(
+            return send(
               res,
               400,
               {
@@ -2429,16 +2982,16 @@ const server=
                   'For Weight Gain, Goal Weight should be higher than Joining Weight.'
               }
             );
+
           }
 
-          /* CONTACT */
 
           if(
             !/^[0-9+()\-\s]{7,20}$/
               .test(contact)
           ){
 
-            return j(
+            return send(
               res,
               400,
               {
@@ -2446,48 +2999,54 @@ const server=
                   'Please enter a valid contact number.'
               }
             );
+
           }
+
+
+          const m={
+
+            name,
+
+            secretKeyHash:
+              hash(secretKey),
+
+            joiningDate,
+
+            joiningWeight,
+
+            currentWeight:
+              joiningWeight,
+
+            goalCategory,
+
+            goalWeight,
+
+            fee,
+
+            contact,
+
+            lastFeeDate,
+
+            active:true,
+
+            createdAt:
+              new Date(),
+
+            updatedAt:
+              new Date()
+
+          };
+
 
           try{
 
-            const m={
-
-              name,
-
-              secretKeyHash:
-                hash(secretKey),
-
-              joiningDate,
-
-              joiningWeight,
-
-              currentWeight:
-                joiningWeight,
-
-              goalCategory,
-
-              goalWeight,
-
-              fee,
-
-              contact,
-
-              lastFeeDate,
-
-              active:true,
-
-              createdAt:
-                new Date(),
-
-              updatedAt:
-                new Date()
-            };
-
             const r=
-              await members
-              .insertOne(m);
+              await members.insertOne(
+                m
+              );
 
-            return j(
+
+            return send(
               res,
               201,
               {
@@ -2500,14 +3059,16 @@ const server=
               }
             );
 
-          }catch(e){
+          }
+
+          catch(e){
 
             if(
               e.code===
-              11000
+                11000
             ){
 
-              return j(
+              return send(
                 res,
                 409,
                 {
@@ -2515,25 +3076,30 @@ const server=
                     'Secret Key already assigned to another member.'
                 }
               );
+
             }
 
             throw e;
+
           }
+
         }
 
-        /* ===================================================
+
+        /* =====================================================
            UPDATE MEMBER
-        =================================================== */
+        ===================================================== */
 
         const mr=
-          u.pathname.match(
+          url.pathname.match(
             /^\/api\/members\/([^/]+)$/
           );
+
 
         if(
           mr &&
           req.method===
-          'PATCH'
+            'PATCH'
         ){
 
           if(
@@ -2545,10 +3111,13 @@ const server=
                 'supreme'
               ]
             )
-          )
+          ){
             return;
+          }
+
 
           let id;
+
 
           try{
 
@@ -2559,9 +3128,11 @@ const server=
                 )
               );
 
-          }catch{
+          }
 
-            return j(
+          catch{
+
+            return send(
               res,
               400,
               {
@@ -2569,17 +3140,18 @@ const server=
                   'Invalid member ID'
               }
             );
+
           }
+
 
           const b=
             await body(req);
 
-          const set={
+          const u={
             updatedAt:
               new Date()
           };
 
-          /* CURRENT WEIGHT */
 
           if(
             b.currentWeight!==
@@ -2589,12 +3161,13 @@ const server=
             const w=
               +b.currentWeight;
 
+
             if(
-              !Number.isFinite(w)||
+              !Number.isFinite(w) ||
               w<=0
             ){
 
-              return j(
+              return send(
                 res,
                 400,
                 {
@@ -2602,12 +3175,15 @@ const server=
                     'Invalid current weight'
                 }
               );
+
             }
 
-            set.currentWeight=w;
+
+            u.currentWeight=
+              w;
+
           }
 
-          /* LAST FEE DATE */
 
           if(
             b.lastFeeDate!==
@@ -2623,7 +3199,7 @@ const server=
                 )
             ){
 
-              return j(
+              return send(
                 res,
                 400,
                 {
@@ -2631,51 +3207,75 @@ const server=
                     'Invalid fee date'
                 }
               );
+
             }
 
-            set.lastFeeDate=
+
+            u.lastFeeDate=
               String(
                 b.lastFeeDate
               );
+
           }
 
+
           if(
-            b.name!==undefined
-          )
-            set.name=
+            b.name!==
+            undefined
+          ){
+
+            u.name=
               String(
                 b.name
               ).trim();
 
+          }
+
+
           if(
-            b.contact!==undefined
-          )
-            set.contact=
+            b.contact!==
+            undefined
+          ){
+
+            u.contact=
               String(
                 b.contact
               ).trim();
 
+          }
+
+
           if(
-            b.active!==undefined
-          )
-            set.active=
+            b.active!==
+            undefined
+          ){
+
+            u.active=
               !!b.active;
 
+          }
+
+
           const r=
-            await members.updateOne(
+            await members.findOneAndUpdate(
               {
                 _id:id
               },
+
               {
-                $set:set
+                $set:u
+              },
+
+              {
+                returnDocument:
+                  'after'
               }
             );
 
-          if(
-            !r.matchedCount
-          ){
 
-            return j(
+          if(!r){
+
+            return send(
               res,
               404,
               {
@@ -2683,32 +3283,31 @@ const server=
                   'Member not found'
               }
             );
+
           }
 
-          const updated=
-            await members.findOne({
-              _id:id
-            });
 
-          return j(
+          return send(
             res,
             200,
             {
               member:
-                clean(updated)
+                clean(r)
             }
           );
+
         }
 
-        /* ===================================================
+
+        /* =====================================================
            SUPREME REPORT
-        =================================================== */
+        ===================================================== */
 
         if(
-          u.pathname===
-          '/api/report' &&
+          url.pathname===
+            '/api/report' &&
           req.method===
-          'GET'
+            'GET'
         ){
 
           if(
@@ -2717,47 +3316,53 @@ const server=
               res,
               ['supreme']
             )
-          )
+          ){
             return;
+          }
+
 
           const arr=
             await members
-            .find({})
-            .sort({
-              createdAt:1
-            })
-            .toArray();
+              .find({})
+              .sort({
+                createdAt:1
+              })
+              .toArray();
 
-          return j(
+
+          return send(
             res,
             200,
             {
               today:
                 new Date()
-                .toISOString()
-                .slice(0,10),
+                  .toISOString()
+                  .slice(0,10),
 
               members:
                 arr.map(
                   m=>({
                     ...clean(m),
+
                     feeStatus:
                       feeStatus(m)
                   })
                 )
             }
           );
+
         }
 
-        /* ===================================================
-           MEMBER PROFILE
-        =================================================== */
+
+        /* =====================================================
+           CURRENT MEMBER
+        ===================================================== */
 
         if(
-          u.pathname===
-          '/api/me' &&
+          url.pathname===
+            '/api/me' &&
           req.method===
-          'GET'
+            'GET'
         ){
 
           const s=
@@ -2767,10 +3372,14 @@ const server=
               ['member']
             );
 
-          if(!s)
+
+          if(!s){
             return;
+          }
+
 
           let id;
+
 
           try{
 
@@ -2779,9 +3388,11 @@ const server=
                 s.identity
               );
 
-          }catch{
+          }
 
-            return j(
+          catch{
+
+            return send(
               res,
               401,
               {
@@ -2789,7 +3400,9 @@ const server=
                   'Invalid session'
               }
             );
+
           }
+
 
           const m=
             await members.findOne(
@@ -2802,9 +3415,10 @@ const server=
               }
             );
 
+
           if(!m){
 
-            return j(
+            return send(
               res,
               404,
               {
@@ -2812,9 +3426,11 @@ const server=
                   'Member not found'
               }
             );
+
           }
 
-          return j(
+
+          return send(
             res,
             200,
             {
@@ -2822,17 +3438,23 @@ const server=
                 clean(m)
             }
           );
+
         }
 
-        /* FRONTEND */
+
+        /* =====================================================
+           FRONTEND
+        ===================================================== */
 
         sendHTML(res);
 
-      }catch(e){
+      }
+
+      catch(e){
 
         console.error(e);
 
-        j(
+        send(
           res,
           500,
           {
@@ -2840,9 +3462,12 @@ const server=
               'Server error'
           }
         );
+
       }
+
     }
   );
+
 
 /* =========================================================
    START
@@ -2850,26 +3475,33 @@ const server=
 
 start()
 
-.then(()=>{
+  .then(
+    function(){
 
-  server.listen(
-    PORT,
-    ()=>{
-      console.log(
-        'TheGym running on port '+
-        PORT
+      server.listen(
+        PORT,
+        function(){
+
+          console.log(
+            'TheGym running on port '+
+            PORT
+          );
+
+        }
       );
+
+    }
+  )
+
+  .catch(
+    function(e){
+
+      console.error(
+        'MongoDB connection failed:',
+        e.message
+      );
+
+      process.exit(1);
+
     }
   );
-
-})
-
-.catch(e=>{
-
-  console.error(
-    'MongoDB connection failed:',
-    e.message
-  );
-
-  process.exit(1);
-});
