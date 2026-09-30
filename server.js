@@ -12,7 +12,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// CRITICAL FIX: Parse JSON request bodies for POST endpoints like /api/auth
+// Essential middleware for parsing request bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -39,7 +39,6 @@ memberSchema.pre('validate', function(next) {
 
 const Member = mongoose.model('Member', memberSchema);
 
-// Connect to MongoDB
 mongoose.connect(MONGODB_URI)
   .then(() => console.log('Successfully connected to MongoDB.'))
   .catch((err) => console.error('MongoDB connection error:', err));
@@ -50,7 +49,11 @@ mongoose.connect(MONGODB_URI)
 
 // Authenticate Role based on Secret Keys
 app.post('/api/auth', (req, res) => {
-  const { secretKey } = req.body || {};
+  const secretKey = req.body ? req.body.secretKey : null;
+
+  if (!secretKey) {
+    return res.status(400).json({ success: false, message: 'No key provided!' });
+  }
 
   if (secretKey === SECRET_SUPREME) {
     return res.json({ success: true, role: 'SUPREME', message: 'Welcome Supreme Admin' });
@@ -61,7 +64,7 @@ app.post('/api/auth', (req, res) => {
   }
 });
 
-// Fetch all members ordered by renewalDate ascending
+// Fetch all members
 app.get('/api/members', async (req, res) => {
   try {
     const members = await Member.find().sort({ renewalDate: 1 });
@@ -78,7 +81,6 @@ app.post('/api/members', async (req, res) => {
     
     const count = await Member.countDocuments();
     const slNo = count + 1;
-
     const paidDate = paidOn ? new Date(paidOn) : new Date();
 
     const newMember = new Member({
@@ -236,10 +238,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
       white-space: nowrap;
       transition: transform 0.2s, box-shadow 0.2s;
     }
-    .login-card button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 20px rgba(255,0,85,0.5);
-    }
     .animation-container {
       flex: 1;
       min-height: 320px;
@@ -309,11 +307,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
       transition: all 0.3s;
       backdrop-filter: blur(10px);
     }
-    .option-card:hover {
-      border-color: #ff0055;
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(255,0,85,0.2);
-    }
     .option-card h3 {
       font-size: 1.8rem;
       margin-bottom: 10px;
@@ -348,10 +341,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
     }
     tr {
       border-bottom: 1px solid rgba(255,255,255,0.04);
-      transition: background 0.2s;
-    }
-    tr:hover {
-      background: rgba(255,255,255,0.02);
     }
     tr.tomato-alert {
       background: rgba(255, 99, 71, 0.22) !important;
@@ -383,12 +372,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
       padding: 30px 25px;
       width: 100%;
       max-width: 450px;
-      position: relative;
-      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    @keyframes popIn {
-      from { transform: scale(0.8); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
     }
     .popup-box h2 {
       font-family: 'Teko', sans-serif;
@@ -416,9 +399,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
       border-radius: 8px;
       font-size: 0.95rem;
       outline: none;
-    }
-    .form-group input:focus {
-      border-color: #ff0055;
     }
     .btn-group {
       display: flex;
@@ -452,10 +432,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
       border-radius: 8px;
       cursor: pointer;
     }
-    .btn-logout:hover {
-      background: #ff0055;
-      border-color: #ff0055;
-    }
   </style>
 </head>
 <body>
@@ -470,10 +446,10 @@ const HTML_CONTENT = `<!DOCTYPE html>
     </div>
 
     <div class="login-container">
-      <div class="login-card">
-        <input type="password" id="secretKeyInput" placeholder="ENTER SECRET KEY" />
-        <button onclick="handleLogin()">Login</button>
-      </div>
+      <form class="login-card" onsubmit="handleLogin(event)">
+        <input type="password" id="secretKeyInput" placeholder="ENTER SECRET KEY" autocomplete="off" required />
+        <button type="submit">Login</button>
+      </form>
     </div>
 
     <div class="animation-container">
@@ -586,7 +562,8 @@ const HTML_CONTENT = `<!DOCTYPE html>
       renderTables(members);
     });
 
-    async function handleLogin() {
+    async function handleLogin(e) {
+      if (e) e.preventDefault();
       const secretKey = document.getElementById('secretKeyInput').value.trim();
       if (!secretKey) return alert('Please enter secret key!');
 
@@ -596,6 +573,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ secretKey })
         });
+
         const data = await res.json();
 
         if (data.success) {
@@ -607,10 +585,10 @@ const HTML_CONTENT = `<!DOCTYPE html>
             document.getElementById('admin-dashboard').classList.add('active');
           }
         } else {
-          alert(data.message || 'Invalid Key!');
+          alert(data.message || 'Invalid Secret Key!');
         }
       } catch (err) {
-        alert('Authentication request failed!');
+        alert('Server Connection Error! Check your network/server status.');
       }
     }
 
@@ -627,9 +605,13 @@ const HTML_CONTENT = `<!DOCTYPE html>
     }
 
     async function loadMembers() {
-      const res = await fetch('/api/members');
-      const members = await res.json();
-      renderTables(members);
+      try {
+        const res = await fetch('/api/members');
+        const members = await res.json();
+        renderTables(members);
+      } catch (err) {
+        console.error('Failed to load members:', err);
+      }
     }
 
     function renderTables(members) {
@@ -689,20 +671,24 @@ const HTML_CONTENT = `<!DOCTYPE html>
       const fees = document.getElementById('memberFees').value;
       const paidOn = document.getElementById('memberPaidOn').value;
 
-      const res = await fetch('/api/members', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, fees, paidOn })
-      });
+      try {
+        const res = await fetch('/api/members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, fees, paidOn })
+        });
 
-      const data = await res.json();
-      if (data.success) {
-        closeAddMemberModal();
-        document.getElementById('addMemberForm').reset();
-        document.getElementById('memberPaidOn').valueAsDate = new Date();
-        loadMembers();
-      } else {
-        alert('Error adding member: ' + data.error);
+        const data = await res.json();
+        if (data.success) {
+          closeAddMemberModal();
+          document.getElementById('addMemberForm').reset();
+          document.getElementById('memberPaidOn').valueAsDate = new Date();
+          loadMembers();
+        } else {
+          alert('Error adding member: ' + data.error);
+        }
+      } catch (err) {
+        alert('Failed to submit form!');
       }
     }
 
@@ -749,8 +735,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
       ctx.quadraticCurveTo(0, -65, 110, -70 + barFlex);
       ctx.lineWidth = 6;
       ctx.strokeStyle = '#cccccc';
-      ctx.shadowColor = '#000000';
-      ctx.shadowBlur = 10;
       ctx.stroke();
 
       const plateOffsets = [-105, -95, 95, 105];
@@ -761,18 +745,10 @@ const HTML_CONTENT = `<!DOCTYPE html>
         const py = -70 + barFlex - (pHeight / 2);
 
         ctx.fillStyle = isOuter ? accentColor : primaryColor;
-        ctx.shadowColor = primaryColor;
-        ctx.shadowBlur = 15;
         ctx.beginPath();
         ctx.roundRect(px - pWidth / 2, py, pWidth, pHeight, 3);
         ctx.fill();
-
-        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(px - pWidth / 2 + 1, py + 4, pWidth - 2, pHeight - 8);
       });
-
-      ctx.shadowBlur = 0;
 
       const headY = -80 - (squatProgress * 5);
       const shoulderY = -60;
@@ -786,9 +762,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
       ctx.arc(0, headY, isFemale ? 11 : 13, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = primaryColor;
-      ctx.stroke();
 
       ctx.beginPath();
       ctx.moveTo(- (isFemale ? 18 : 24), shoulderY);
@@ -796,13 +769,8 @@ const HTML_CONTENT = `<!DOCTYPE html>
       ctx.lineTo(isFemale ? 12 : 16, hipY);
       ctx.lineTo(- (isFemale ? 12 : 16), hipY);
       ctx.closePath();
-      const torsoGrad = ctx.createLinearGradient(0, shoulderY, 0, hipY);
-      torsoGrad.addColorStop(0, primaryColor);
-      torsoGrad.addColorStop(1, '#111118');
-      ctx.fillStyle = torsoGrad;
+      ctx.fillStyle = primaryColor;
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-      ctx.stroke();
 
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 4;
@@ -827,10 +795,6 @@ const HTML_CONTENT = `<!DOCTYPE html>
       ctx.lineTo(kneeX, kneeY);
       ctx.lineTo(footX, footY);
       ctx.stroke();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(-footX - 6, footY - 2, 12, 5);
-      ctx.fillRect(footX - 6, footY - 2, 12, 5);
 
       ctx.restore();
     }
@@ -872,7 +836,6 @@ app.get('/', (req, res) => {
   res.send(HTML_CONTENT);
 });
 
-// Start Server
 server.listen(PORT, () => {
   console.log(`Server executing on port ${PORT}`);
 });
