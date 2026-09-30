@@ -100,16 +100,14 @@ app.post('/api/members', async (req, res) => {
 });
 
 // WebSockets Connection
-io.on('connection', (socket) => {
+io.on('connection', () => {
   console.log('Client connected to real-time updates');
 });
 
 // ==========================================
-// COMPLETE FRONTEND HTML & CSS & JS
+// SERVE FRONTEND INTERFACE
 // ==========================================
-app.get('/', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
+const HTML_CONTENT = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -132,8 +130,6 @@ app.get('/', (req, res) => {
       min-height: 100vh;
       min-height: 100dvh;
     }
-
-    /* Screen Sections */
     .screen {
       display: none;
       width: 100vw;
@@ -144,8 +140,6 @@ app.get('/', (req, res) => {
       display: flex;
       flex-direction: column;
     }
-
-    /* MOBILE-OPTIMIZED LOGIN SCREEN */
     #login-screen {
       min-height: 100vh;
       min-height: 100dvh;
@@ -155,8 +149,6 @@ app.get('/', (req, res) => {
       background: radial-gradient(circle at top, #1a1a24 0%, #08080a 100%);
       position: relative;
     }
-
-    /* Top Branding Header */
     .brand-header {
       padding: 20px 15px;
       display: flex;
@@ -182,8 +174,6 @@ app.get('/', (req, res) => {
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-
-    /* Middle Login Area */
     .login-container {
       padding: 20px 15px;
       display: flex;
@@ -250,8 +240,6 @@ app.get('/', (req, res) => {
       transform: translateY(-2px);
       box-shadow: 0 0 20px rgba(255,0,85,0.5);
     }
-
-    /* Interactive 4D Canvas Container */
     .animation-container {
       flex: 1;
       min-height: 320px;
@@ -265,8 +253,6 @@ app.get('/', (req, res) => {
       height: 100%;
       display: block;
     }
-
-    /* DASHBOARDS STYLING */
     .dashboard {
       padding: clamp(15px, 4vw, 40px);
       max-width: 1600px;
@@ -307,8 +293,6 @@ app.get('/', (req, res) => {
       font-size: 0.85rem;
       font-weight: 700;
     }
-
-    /* Admin Options */
     .admin-options {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -336,8 +320,6 @@ app.get('/', (req, res) => {
       font-family: 'Teko', sans-serif;
       letter-spacing: 1px;
     }
-
-    /* Responsive Tables */
     .table-container {
       background: rgba(18,18,24,0.8);
       border-radius: 16px;
@@ -371,8 +353,6 @@ app.get('/', (req, res) => {
     tr:hover {
       background: rgba(255,255,255,0.02);
     }
-
-    /* Highlight Row: Tomato Red for <= 5 days remaining */
     tr.tomato-alert {
       background: rgba(255, 99, 71, 0.22) !important;
       border-left: 5px solid #FF6347;
@@ -381,8 +361,6 @@ app.get('/', (req, res) => {
       color: #ffa392;
       font-weight: 600;
     }
-
-    /* PREMIUM POPUPS */
     .popup-overlay {
       display: none;
       position: fixed;
@@ -482,11 +460,7 @@ app.get('/', (req, res) => {
 </head>
 <body>
 
-  <!-- ========================================== -->
-  <!-- 1. LOGIN SCREEN -->
-  <!-- ========================================== -->
   <div id="login-screen" class="screen active">
-    <!-- Branding Header -->
     <div class="brand-header">
       <svg viewBox="0 0 100 100">
         <path d="M20,20 L80,20 L80,35 L55,35 L55,80 L40,80 L40,35 L20,35 Z" fill="#ff0055"/>
@@ -495,7 +469,6 @@ app.get('/', (req, res) => {
       <div class="brand-title">TheGym</div>
     </div>
 
-    <!-- Login Form Area -->
     <div class="login-container">
       <div class="login-card">
         <input type="password" id="secretKeyInput" placeholder="ENTER SECRET KEY" />
@@ -503,15 +476,11 @@ app.get('/', (req, res) => {
       </div>
     </div>
 
-    <!-- 4D Weightlifting Canvas Animation -->
     <div class="animation-container">
       <canvas id="animationCanvas"></canvas>
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- 2. ADMIN DASHBOARD -->
-  <!-- ========================================== -->
   <div id="admin-dashboard" class="screen">
     <div class="dashboard">
       <div class="dash-header">
@@ -533,7 +502,6 @@ app.get('/', (req, res) => {
         </div>
       </div>
 
-      <!-- Data Sheet Section -->
       <div id="adminDataSheetContainer" style="margin-top: 30px; display: none;">
         <h2 style="font-family:'Teko'; font-size: 2rem; margin-bottom: 15px;">Member Data Sheet</h2>
         <div class="table-container">
@@ -554,9 +522,6 @@ app.get('/', (req, res) => {
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- 3. SUPREME ADMIN DASHBOARD -->
-  <!-- ========================================== -->
   <div id="supreme-dashboard" class="screen">
     <div class="dashboard">
       <div class="dash-header">
@@ -589,9 +554,6 @@ app.get('/', (req, res) => {
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- PREMIUM POPUPS -->
-  <!-- ========================================== -->
   <div class="popup-overlay" id="addMemberModal">
     <div class="popup-box">
       <h2>Add New Member</h2>
@@ -618,16 +580,12 @@ app.get('/', (req, res) => {
 
   <script>
     const socket = io();
-
-    // Set today as default for date input
     document.getElementById('memberPaidOn').valueAsDate = new Date();
 
-    // Listen to WebSocket broadcasts for real-time live data update
     socket.on('dataUpdate', (members) => {
       renderTables(members);
     });
 
-    // Handle Authentication Login
     async function handleLogin() {
       const secretKey = document.getElementById('secretKeyInput').value.trim();
       if (!secretKey) return alert('Please enter secret key!');
@@ -688,43 +646,36 @@ app.get('/', (req, res) => {
         const renewalDateObj = new Date(m.renewalDate);
         const renewalDateStr = renewalDateObj.toLocaleDateString();
 
-        // Calculate days remaining
         const diffTime = renewalDateObj - now;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        // Admin Table Row
         if (adminTbody) {
           const tr = document.createElement('tr');
-          tr.innerHTML = \`
-            <td>\${m.slNo}</td>
-            <td>\${m.name}</td>
-            <td>₹\${m.fees}</td>
-            <td>\${paidDate}</td>
-            <td>\${renewalDateStr}</td>
-          \`;
+          tr.innerHTML = '<td>' + m.slNo + '</td>' +
+                         '<td>' + m.name + '</td>' +
+                         '<td>₹' + m.fees + '</td>' +
+                         '<td>' + paidDate + '</td>' +
+                         '<td>' + renewalDateStr + '</td>';
           adminTbody.appendChild(tr);
         }
 
-        // Supreme Admin Table Row (Highlighted with tomato red if <= 5 days remaining)
         if (supremeTbody) {
           const tr = document.createElement('tr');
           if (diffDays <= 5) {
             tr.classList.add('tomato-alert');
           }
-          tr.innerHTML = \`
-            <td>\${m.slNo}</td>
-            <td>\${m.name}</td>
-            <td>₹\${m.fees}</td>
-            <td>\${paidDate}</td>
-            <td>\${renewalDateStr}</td>
-            <td>\${diffDays < 0 ? 'Expired (' + Math.abs(diffDays) + ' days ago)' : diffDays + ' Days'}</td>
-          \`;
+          const remainingText = diffDays < 0 ? 'Expired (' + Math.abs(diffDays) + ' days ago)' : diffDays + ' Days';
+          tr.innerHTML = '<td>' + m.slNo + '</td>' +
+                         '<td>' + m.name + '</td>' +
+                         '<td>₹' + m.fees + '</td>' +
+                         '<td>' + paidDate + '</td>' +
+                         '<td>' + renewalDateStr + '</td>' +
+                         '<td>' + remainingText + '</td>';
           supremeTbody.appendChild(tr);
         }
       });
     }
 
-    // Modal Control
     function openAddMemberModal() {
       document.getElementById('addMemberModal').classList.add('active');
     }
@@ -755,10 +706,6 @@ app.get('/', (req, res) => {
       }
     }
 
-    // ==========================================
-    // ADVANCED 4D VECTOR MESH CANVAS ANIMATION
-    // High-performance dynamic mesh rendering with dynamic depth, flexing barbell physics & glow particles
-    // ==========================================
     const canvas = document.getElementById('animationCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -773,8 +720,6 @@ app.get('/', (req, res) => {
     resizeCanvas();
 
     let animTime = 0;
-
-    // Background floating energy particles
     const particles = Array.from({ length: 30 }, () => ({
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
@@ -785,15 +730,11 @@ app.get('/', (req, res) => {
 
     function draw4DLifter(centerX, centerY, baseScale, phaseShift, isFemale) {
       ctx.save();
-      
       const width = canvas.parentElement.getBoundingClientRect().width;
       const scale = baseScale * Math.min(width / 600, 1.2);
 
-      // Squat depth animation loop using sine wave cycle
-      const squatProgress = (Math.sin(animTime + phaseShift) + 1) / 2; // 0 (Standing) to 1 (Deep Squat)
+      const squatProgress = (Math.sin(animTime + phaseShift) + 1) / 2;
       const squatY = squatProgress * 45;
-      
-      // 4D Perspective scale variation (simulating motion towards/away from camera)
       const depthScale = 1 + (squatProgress * 0.08);
 
       ctx.translate(centerX, centerY + squatY);
@@ -802,8 +743,7 @@ app.get('/', (req, res) => {
       const primaryColor = isFemale ? '#ff0055' : '#00d4ff';
       const accentColor = isFemale ? '#ff5500' : '#0077ff';
 
-      // 1. BARBELL & FLEXING OLYMPIC BAR
-      const barFlex = squatProgress * 6; // Bar flexing under heavy load
+      const barFlex = squatProgress * 6;
       ctx.beginPath();
       ctx.moveTo(-110, -70 + barFlex);
       ctx.quadraticCurveTo(0, -65, 110, -70 + barFlex);
@@ -813,7 +753,6 @@ app.get('/', (req, res) => {
       ctx.shadowBlur = 10;
       ctx.stroke();
 
-      // 2. HEAVY OLYMPIC WEIGHT PLATES (3D Stacked Layers)
       const plateOffsets = [-105, -95, 95, 105];
       plateOffsets.forEach((px, idx) => {
         const isOuter = idx === 0 || idx === 3;
@@ -821,7 +760,6 @@ app.get('/', (req, res) => {
         const pWidth = 8;
         const py = -70 + barFlex - (pHeight / 2);
 
-        // Plate Shadow / Glow
         ctx.fillStyle = isOuter ? accentColor : primaryColor;
         ctx.shadowColor = primaryColor;
         ctx.shadowBlur = 15;
@@ -829,24 +767,21 @@ app.get('/', (req, res) => {
         ctx.roundRect(px - pWidth / 2, py, pWidth, pHeight, 3);
         ctx.fill();
 
-        // 3D Inner Plate Ring Details
         ctx.strokeStyle = 'rgba(255,255,255,0.4)';
         ctx.lineWidth = 1;
         ctx.strokeRect(px - pWidth / 2 + 1, py + 4, pWidth - 2, pHeight - 8);
       });
 
-      ctx.shadowBlur = 0; // Reset shadow
+      ctx.shadowBlur = 0;
 
-      // 3. ANATOMICAL VECTOR MESH BODY
       const headY = -80 - (squatProgress * 5);
       const shoulderY = -60;
       const hipY = 0;
       const kneeX = isFemale ? 28 : 34;
-      const kneeY = 35 - (squatProgress * 20); // Knees bend outward/downward
+      const kneeY = 35 - (squatProgress * 20);
       const footX = 22;
-      const footY = 65 - squatY; // Feet stay firmly grounded
+      const footY = 65 - squatY;
 
-      // Head
       ctx.beginPath();
       ctx.arc(0, headY, isFemale ? 11 : 13, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
@@ -855,7 +790,6 @@ app.get('/', (req, res) => {
       ctx.strokeStyle = primaryColor;
       ctx.stroke();
 
-      // Torso (Trapezoid Mesh)
       ctx.beginPath();
       ctx.moveTo(- (isFemale ? 18 : 24), shoulderY);
       ctx.lineTo(isFemale ? 18 : 24, shoulderY);
@@ -870,37 +804,30 @@ app.get('/', (req, res) => {
       ctx.strokeStyle = 'rgba(255,255,255,0.3)';
       ctx.stroke();
 
-      // Arms gripping bar
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 4;
       ctx.beginPath();
-      // Left arm
       ctx.moveTo(- (isFemale ? 18 : 24), shoulderY);
       ctx.lineTo(-50, -68 + barFlex);
-      // Right arm
       ctx.moveTo((isFemale ? 18 : 24), shoulderY);
       ctx.lineTo(50, -68 + barFlex);
       ctx.stroke();
 
-      // Muscular Legs (Thighs + Calves)
       ctx.lineWidth = 6;
       ctx.strokeStyle = primaryColor;
       
-      // Left Leg
       ctx.beginPath();
       ctx.moveTo(- (isFemale ? 10 : 14), hipY);
       ctx.lineTo(-kneeX, kneeY);
       ctx.lineTo(-footX, footY);
       ctx.stroke();
 
-      // Right Leg
       ctx.beginPath();
       ctx.moveTo((isFemale ? 10 : 14), hipY);
       ctx.lineTo(kneeX, kneeY);
       ctx.lineTo(footX, footY);
       ctx.stroke();
 
-      // Shoes / Base
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(-footX - 6, footY - 2, 12, 5);
       ctx.fillRect(footX - 6, footY - 2, 12, 5);
@@ -914,23 +841,19 @@ app.get('/', (req, res) => {
 
       ctx.clearRect(0, 0, width, height);
 
-      // Render Floating Dust Particles
       particles.forEach(p => {
         p.y -= p.speedY;
         if (p.y < 0) p.y = height;
-        ctx.fillStyle = `rgba(255, 0, 85, ${p.alpha})`;
+        ctx.fillStyle = 'rgba(255, 0, 85, ' + p.alpha + ')';
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
       });
 
-      // Adaptive dual position on mobile vs desktop screens
       if (width < 600) {
-        // Mobile Stacked/Centere Dual View
         draw4DLifter(width * 0.3, height * 0.52, 0.8, 0, false);
         draw4DLifter(width * 0.7, height * 0.52, 0.75, Math.PI, true);
       } else {
-        // Desktop Wide View
         draw4DLifter(width * 0.32, height * 0.55, 1.0, 0, false);
         draw4DLifter(width * 0.68, height * 0.55, 0.95, Math.PI, true);
       }
@@ -942,8 +865,11 @@ app.get('/', (req, res) => {
     animate();
   </script>
 </body>
-</html>
-  `);
+</html>`;
+
+app.get('/', (req, res) => {
+  res.setHeader('Content-Type', 'text/html');
+  res.send(HTML_CONTENT);
 });
 
 // Start Server
