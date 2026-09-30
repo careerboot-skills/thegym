@@ -1,6 +1,6 @@
 // ================================================================
 // THEGYM — FULLY INTEGRATED 4K ANIMATED WEB PORTAL
-// Single-file Node.js + Express/HTTP + MongoDB Portal
+// Single-file Node.js + HTTP + MongoDB Portal
 // ================================================================
 
 const http = require("http");
@@ -11,7 +11,7 @@ const PORT = Number(process.env.PORT || 3000);
 const ADMIN_KEY = process.env.ADMIN_KEY || "SKTCB";
 const SUPREME_KEY = process.env.SUPREME_KEY || "VAIVAIXXXI";
 const SESSION_SECRET = process.env.SESSION_SECRET || "THEGYM_CAREERBOOT_2026_SECRET";
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017";
+const MONGODB_URI = process.env.MONGODB_URI || "";
 const DB_NAME = process.env.DB_NAME || "thegym";
 
 let db = null;
@@ -143,7 +143,6 @@ function sendHTML(res) {
     position: relative;
   }
 
-  /* Animated Gym Atmosphere Background */
   body::before {
     content: '';
     position: fixed;
@@ -162,7 +161,6 @@ function sendHTML(res) {
     100% { transform: rotate(360deg); }
   }
 
-  /* Animated Gym Stickers */
   .sticker {
     position: fixed;
     font-size: 38px;
@@ -182,10 +180,9 @@ function sendHTML(res) {
     100% { transform: translateY(-20px) rotate(10deg) scale(1.1); }
   }
 
-  /* Header / Navigation */
   header {
     display: flex;
-    justify-space: space-between;
+    justify-content: space-between;
     align-items: center;
     padding: 16px 32px;
     background: rgba(8, 12, 18, 0.95);
@@ -223,7 +220,6 @@ function sendHTML(res) {
     padding: 32px 16px;
   }
 
-  /* 4K Glass Card */
   .card-4k {
     background: var(--card-bg);
     border: 1px solid var(--border-line);
@@ -289,7 +285,6 @@ function sendHTML(res) {
     border-color: var(--lime);
   }
 
-  /* Status Badges */
   .badge {
     display: inline-block;
     padding: 6px 14px;
@@ -303,7 +298,6 @@ function sendHTML(res) {
   .bg-orange { background: rgba(255, 145, 0, 0.15); color: #ff9100; border: 1px solid #ff9100; }
   .bg-red { background: rgba(255, 99, 71, 0.2); color: #ff6347; border: 1px solid #ff6347; }
 
-  /* Table Design */
   .table-box { overflow-x: auto; margin-top: 16px; }
   table { width: 100%; border-collapse: collapse; text-align: left; }
   th {
@@ -322,7 +316,6 @@ function sendHTML(res) {
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media(max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
 
-  /* Footer */
   footer {
     text-align: center;
     padding: 24px 16px;
@@ -342,7 +335,6 @@ function sendHTML(res) {
 
 <header>
   <div class="brand">
-    <!-- SVG Logo TG -->
     <svg class="brand-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect width="100" height="100" rx="20" fill="#0D131C"/>
       <rect x="2" y="2" width="96" height="96" rx="18" stroke="#CCFF00" stroke-width="4" stroke-opacity="0.4"/>
@@ -361,11 +353,11 @@ function sendHTML(res) {
 </footer>
 
 <script>
-let token = localStorage.getItem('tg_token');
-let role = localStorage.getItem('tg_role');
+var token = localStorage.getItem('tg_token');
+var role = localStorage.getItem('tg_role');
 
 function renderNav() {
-  const el = document.getElementById('navRight');
+  var el = document.getElementById('navRight');
   if (token) {
     el.innerHTML = '<button onclick="logout()" class="btn-secondary" style="padding:10px 20px;width:auto;">LOGOUT</button>';
   } else {
@@ -379,40 +371,39 @@ function renderLogin() {
   token = null; role = null;
   renderNav();
 
-  document.getElementById('app').innerHTML = \`
-    <div class="card-4k" style="max-width:440px;margin:60px auto;text-align:center;">
-      <h2 style="color:var(--lime);margin-bottom:8px;">PORTAL ACCESS</h2>
-      <p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:24px;">Enter Secret Key to Access Portal</p>
-      <input type="password" id="keyInput" placeholder="ENTER SECRET KEY" style="text-align:center;letter-spacing:4px;font-size:18px;" autofocus>
-      <button onclick="login()">VERIFY SECRET KEY →</button>
-      <div id="err" style="color:#ff6347;font-size:13px;margin-top:16px;"></div>
-    </div>
-  \`;
+  document.getElementById('app').innerHTML =
+    '<div class="card-4k" style="max-width:440px;margin:60px auto;text-align:center;">' +
+      '<h2 style="color:var(--lime);margin-bottom:8px;">PORTAL ACCESS</h2>' +
+      '<p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:24px;">Enter Secret Key to Access Portal</p>' +
+      '<input type="password" id="keyInput" placeholder="ENTER SECRET KEY" style="text-align:center;letter-spacing:4px;font-size:18px;" autofocus>' +
+      '<button onclick="login()">VERIFY SECRET KEY →</button>' +
+      '<div id="err" style="color:#ff6347;font-size:13px;margin-top:16px;"></div>' +
+    '</div>';
 }
 
-async function login() {
-  const key = document.getElementById('keyInput').value.trim();
-  const err = document.getElementById('err');
+function login() {
+  var key = document.getElementById('keyInput').value.trim();
+  var err = document.getElementById('err');
   err.textContent = '';
-  if (!key) return err.textContent = 'Please enter a valid Secret Key';
+  if (!key) { err.textContent = 'Please enter a valid Secret Key'; return; }
 
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key })
-    });
-    const data = await res.json();
+  fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key: key })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
     if (data.error) throw new Error(data.error);
-
     token = data.token;
     role = data.role;
     localStorage.setItem('tg_token', token);
     localStorage.setItem('tg_role', role);
     route();
-  } catch(e) {
+  })
+  .catch(function(e) {
     err.textContent = e.message;
-  }
+  });
 }
 
 function logout() {
@@ -421,85 +412,83 @@ function logout() {
 
 function showAdminPanel() {
   renderNav();
-  document.getElementById('app').innerHTML = \`
-    <div class="card-4k">
-      <div style="display:flex;justify-space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-        <h2 style="color:var(--lime);">ADMIN CONTROL PANEL</h2>
-        <div style="display:flex;gap:12px;">
-          <button onclick="showRegisterForm()" style="width:auto;padding:12px 20px;">+ REGISTER NEW MEMBER</button>
-          <button onclick="showMembersProfileSheet()" class="btn-secondary" style="width:auto;padding:12px 20px;">MEMBERS PROFILE PAGE</button>
-        </div>
-      </div>
-      <div id="adminContent"></div>
-    </div>
-  \`;
+  document.getElementById('app').innerHTML =
+    '<div class="card-4k">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">' +
+        '<h2 style="color:var(--lime);">ADMIN CONTROL PANEL</h2>' +
+        '<div style="display:flex;gap:12px;">' +
+          '<button onclick="showRegisterForm()" style="width:auto;padding:12px 20px;">+ REGISTER NEW MEMBER</button>' +
+          '<button onclick="showMembersProfileSheet()" class="btn-secondary" style="width:auto;padding:12px 20px;">MEMBERS PROFILE PAGE</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="adminContent"></div>' +
+    '</div>';
   showMembersProfileSheet();
 }
 
 function showRegisterForm() {
-  document.getElementById('adminContent').innerHTML = \`
-    <div style="max-width:680px;margin:20px auto;background:rgba(4,7,12,0.6);padding:24px;border-radius:18px;border:1px solid var(--border-line);">
-      <h3 style="margin-bottom:20px;color:var(--lime);">MEMBERS REGISTER PAGE</h3>
-      <form onsubmit="handleRegister(event)">
-        <label style="font-size:12px;color:rgba(255,255,255,0.7);">Full Name</label>
-        <input name="name" placeholder="John Doe" required>
+  document.getElementById('adminContent').innerHTML =
+    '<div style="max-width:680px;margin:20px auto;background:rgba(4,7,12,0.6);padding:24px;border-radius:18px;border:1px solid var(--border-line);">' +
+      '<h3 style="margin-bottom:20px;color:var(--lime);">MEMBERS REGISTER PAGE</h3>' +
+      '<form onsubmit="handleRegister(event)">' +
+        '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Full Name</label>' +
+        '<input name="name" placeholder="John Doe" required>' +
 
-        <label style="font-size:12px;color:rgba(255,255,255,0.7);">Assign Secret Key</label>
-        <input name="secretKey" placeholder="e.g. USER123" required>
+        '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Assign Secret Key</label>' +
+        '<input name="secretKey" placeholder="e.g. USER123" required>' +
 
-        <div class="grid-2">
-          <div>
-            <label style="font-size:12px;color:rgba(255,255,255,0.7);">Joining Date</label>
-            <input type="date" name="joiningDate" required>
-          </div>
-          <div>
-            <label style="font-size:12px;color:rgba(255,255,255,0.7);">Joining Day Weight (kg)</label>
-            <input type="number" step="0.1" name="joiningWeight" placeholder="80" required>
-          </div>
-        </div>
+        '<div class="grid-2">' +
+          '<div>' +
+            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Joining Date</label>' +
+            '<input type="date" name="joiningDate" required>' +
+          '</div>' +
+          '<div>' +
+            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Joining Day Weight (kg)</label>' +
+            '<input type="number" step="0.1" name="joiningWeight" placeholder="80" required>' +
+          '</div>' +
+        '</div>' +
 
-        <div class="grid-2">
-          <div>
-            <label style="font-size:12px;color:rgba(255,255,255,0.7);">Goal Category</label>
-            <select name="goalCategory">
-              <option value="Loss">Weight Loss</option>
-              <option value="Gain">Weight Gain</option>
-            </select>
-          </div>
-          <div>
-            <label style="font-size:12px;color:rgba(255,255,255,0.7);">Goal Weight (kg)</label>
-            <input type="number" step="0.1" name="goalWeight" placeholder="70" required>
-          </div>
-        </div>
+        '<div class="grid-2">' +
+          '<div>' +
+            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Goal Category</label>' +
+            '<select name="goalCategory">' +
+              '<option value="Loss">Weight Loss</option>' +
+              '<option value="Gain">Weight Gain</option>' +
+            '</select>' +
+          '</div>' +
+          '<div>' +
+            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Goal Weight (kg)</label>' +
+            '<input type="number" step="0.1" name="goalWeight" placeholder="70" required>' +
+          '</div>' +
+        '</div>' +
 
-        <div class="grid-2">
-          <div>
-            <label style="font-size:12px;color:rgba(255,255,255,0.7);">Members Fees</label>
-            <select name="fee">
-              <option value="500">₹500</option>
-              <option value="700">₹700</option>
-            </select>
-          </div>
-          <div>
-            <label style="font-size:12px;color:rgba(255,255,255,0.7);">Contact Number</label>
-            <input name="contact" placeholder="+91 9876543210" required>
-          </div>
-        </div>
+        '<div class="grid-2">' +
+          '<div>' +
+            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Members Fees</label>' +
+            '<select name="fee">' +
+              '<option value="500">₹500</option>' +
+              '<option value="700">₹700</option>' +
+            '</select>' +
+          '</div>' +
+          '<div>' +
+            '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Contact Number</label>' +
+            '<input name="contact" placeholder="+91 9876543210" required>' +
+          '</div>' +
+        '</div>' +
 
-        <label style="font-size:12px;color:rgba(255,255,255,0.7);">Last Fees Submission Date</label>
-        <input type="date" name="lastFeeDate" required>
+        '<label style="font-size:12px;color:rgba(255,255,255,0.7);">Last Fees Submission Date</label>' +
+        '<input type="date" name="lastFeeDate" required>' +
 
-        <button type="submit" style="margin-top:12px;">CREATE MEMBER PROFILE</button>
-      </form>
-      <div id="regErr" style="color:#ff6347;font-size:13px;margin-top:12px;"></div>
-    </div>
-  \`;
+        '<button type="submit" style="margin-top:12px;">CREATE MEMBER PROFILE</button>' +
+      '</form>' +
+      '<div id="regErr" style="color:#ff6347;font-size:13px;margin-top:12px;"></div>' +
+    '</div>';
 }
 
-async function handleRegister(e) {
+function handleRegister(e) {
   e.preventDefault();
-  const form = e.target;
-  const body = {
+  var form = e.target;
+  var body = {
     name: form.name.value,
     secretKey: form.secretKey.value,
     joiningDate: form.joiningDate.value,
@@ -511,160 +500,169 @@ async function handleRegister(e) {
     lastFeeDate: form.lastFeeDate.value
   };
 
-  try {
-    const res = await fetch('/api/members', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json();
+  fetch('/api/members', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(body)
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
     if (data.error) throw new Error(data.error);
     alert('Member Created Successfully!');
     showMembersProfileSheet();
-  } catch(err) {
+  })
+  .catch(function(err) {
     document.getElementById('regErr').textContent = err.message;
-  }
+  });
 }
 
-async function showMembersProfileSheet() {
-  const res = await fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } });
-  if (res.status === 401) return renderLogin();
-  const data = await res.json();
+function showMembersProfileSheet() {
+  fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } })
+  .then(function(res) {
+    if (res.status === 401) { renderLogin(); return null; }
+    return res.json();
+  })
+  .then(function(data) {
+    if (!data) return;
+    var rows = data.members.map(function(m) {
+      return '<tr>' +
+        '<td><b>' + m.name + '</b></td>' +
+        '<td>' + m.joiningDate + '</td>' +
+        '<td><b>' + m.currentWeight + ' kg</b> <button onclick="editWeight(\'' + m.id + '\', ' + m.currentWeight + ')" class="btn-secondary" style="padding:4px 10px;font-size:10px;width:auto;display:inline-block;margin-left:8px;">EDIT</button></td>' +
+        '<td>' + m.joiningWeight + ' kg</td>' +
+        '<td><span class="badge bg-green">' + m.growth + '%</span></td>' +
+      '</tr>';
+    }).join('');
 
-  const rows = data.members.map(m => \`
-    <tr>
-      <td><b>\${m.name}</b></td>
-      <td>\${m.joiningDate}</td>
-      <td><b>\${m.currentWeight} kg</b> <button onclick="editWeight('\${m.id}', \${m.currentWeight})" class="btn-secondary" style="padding:4px 10px;font-size:10px;width:auto;display:inline-block;margin-left:8px;">EDIT</button></td>
-      <td>\${m.joiningWeight} kg</td>
-      <td><span class="badge bg-green">\${m.growth}%</span></td>
-    </tr>
-  \`).join('');
-
-  document.getElementById('adminContent').innerHTML = \`
-    <h3 style="color:var(--lime);margin-top:12px;">MEMBERS PROFILE SHEET</h3>
-    <div class="table-box">
-      <table>
-        <thead>
-          <tr>
-            <th>NAME</th>
-            <th>JOINING DATE</th>
-            <th>CURRENT DAY WEIGHT</th>
-            <th>JOINING DATE WEIGHT</th>
-            <th>GROWTH STATUS (%)</th>
-          </tr>
-        </thead>
-        <tbody>\${rows || '<tr><td colspan="5">No members found</td></tr>'}</tbody>
-      </table>
-    </div>
-  \`;
+    document.getElementById('adminContent').innerHTML =
+      '<h3 style="color:var(--lime);margin-top:12px;">MEMBERS PROFILE SHEET</h3>' +
+      '<div class="table-box">' +
+        '<table>' +
+          '<thead>' +
+            '<tr>' +
+              '<th>NAME</th>' +
+              '<th>JOINING DATE</th>' +
+              '<th>CURRENT DAY WEIGHT</th>' +
+              '<th>JOINING DATE WEIGHT</th>' +
+              '<th>GROWTH STATUS (%)</th>' +
+            '</tr>' +
+          '</thead>' +
+          '<tbody>' + (rows || '<tr><td colspan="5">No members found</td></tr>') + '</tbody>' +
+        '</table>' +
+      '</div>';
+  });
 }
 
-async function editWeight(id, oldWt) {
-  const w = prompt('Enter Current Day Weight (kg):', oldWt);
+function editWeight(id, oldWt) {
+  var w = prompt('Enter Current Day Weight (kg):', oldWt);
   if (!w) return;
-  await fetch('/api/members/' + id + '/weight', {
+  fetch('/api/members/' + id + '/weight', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
     body: JSON.stringify({ currentWeight: Number(w) })
+  })
+  .then(function() { showMembersProfileSheet(); });
+}
+
+function showSupremeDashboard() {
+  renderNav();
+  fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } })
+  .then(function(res) {
+    if (res.status === 401) { renderLogin(); return null; }
+    return res.json();
+  })
+  .then(function(data) {
+    if (!data) return;
+    var todayStr = new Date().toISOString().split('T')[0];
+
+    var rows = data.members.map(function(m, idx) {
+      var lastFee = new Date(m.lastFeeDate);
+      var today = new Date();
+      var diffDays = Math.floor((today - lastFee) / (1000 * 60 * 60 * 24));
+
+      var statusHtml = '';
+      if (diffDays > 30) {
+        statusHtml = '<span class="badge bg-red">' + (diffDays - 30) + ' Days Gone</span>';
+      } else {
+        var rem = 30 - diffDays;
+        if (rem >= 20) statusHtml = '<span class="badge bg-green">' + rem + ' Days Balance</span>';
+        else if (rem >= 11) statusHtml = '<span class="badge bg-yellow">' + rem + ' Days Balance</span>';
+        else statusHtml = '<span class="badge bg-orange">' + rem + ' Days Balance</span>';
+      }
+
+      return '<tr>' +
+        '<td><b>' + (idx + 1) + '</b></td>' +
+        '<td><b>' + m.name + '</b></td>' +
+        '<td>' + todayStr + '</td>' +
+        '<td>₹' + m.fee + '</td>' +
+        '<td>' + statusHtml + '</td>' +
+        '<td><span class="badge bg-green">' + m.growth + '%</span></td>' +
+        '<td>' + m.contact + '</td>' +
+      '</tr>';
+    }).join('');
+
+    document.getElementById('app').innerHTML =
+      '<div class="card-4k">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;">' +
+          '<div>' +
+            '<h2 style="color:var(--lime);">SUPREME ADMIN REPORT DASHBOARD</h2>' +
+            '<p style="color:rgba(255,255,255,0.6);font-size:13px;">Daily-to-Monthly Live Member Tracker</p>' +
+          '</div>' +
+          '<div class="badge bg-green">TODAY: ' + todayStr + '</div>' +
+        '</div>' +
+        '<div class="table-box">' +
+          '<table>' +
+            '<thead>' +
+              '<tr>' +
+                '<th>SL NO.</th>' +
+                '<th>NAME</th>' +
+                '<th>DATE</th>' +
+                '<th>FEES</th>' +
+                '<th>STATUS</th>' +
+                '<th>GROWTH</th>' +
+                '<th>CONTACT NUMBER</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' + (rows || '<tr><td colspan="7">No records available</td></tr>') + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
   });
-  showMembersProfileSheet();
 }
 
-async function showSupremeDashboard() {
+function showUserPerformance() {
   renderNav();
-  const res = await fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } });
-  if (res.status === 401) return renderLogin();
-  const data = await res.json();
+  fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } })
+  .then(function(res) {
+    if (res.status === 401) { renderLogin(); return null; }
+    return res.json();
+  })
+  .then(function(data) {
+    if (!data) return;
+    var m = data.member;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+    document.getElementById('app').innerHTML =
+      '<div class="card-4k" style="max-width:600px;margin:30px auto;text-align:center;">' +
+        '<div style="font-family:\'Orbitron\';font-size:12px;letter-spacing:2px;color:var(--lime);margin-bottom:8px;">MEMBER PERFORMANCE DASHBOARD</div>' +
+        '<h1 style="font-size:36px;margin-bottom:24px;color:#fff;">' + m.name.toUpperCase() + '</h1>' +
 
-  const rows = data.members.map((m, idx) => {
-    const lastFee = new Date(m.lastFeeDate);
-    const today = new Date();
-    const diffDays = Math.floor((today - lastFee) / (1000 * 60 * 60 * 24));
+        '<div style="background:rgba(4,7,12,0.9);border-radius:20px;padding:32px;border:1px solid var(--lime);box-shadow:0 0 30px var(--lime-glow);margin-bottom:24px;">' +
+          '<div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:8px;">GROWTH STATUS</div>' +
+          '<div style="font-size:72px;font-weight:900;color:var(--lime);font-family:\'Orbitron\';">' + m.growth + '%</div>' +
+        '</div>' +
 
-    let statusHtml = '';
-    if (diffDays > 30) {
-      statusHtml = \`<span class="badge bg-red">\${diffDays - 30} Days Gone</span>\`;
-    } else {
-      const rem = 30 - diffDays;
-      if (rem >= 20) statusHtml = \`<span class="badge bg-green">\${rem} Days Balance</span>\`;
-      else if (rem >= 11) statusHtml = \`<span class="badge bg-yellow">\${rem} Days Balance</span>\`;
-      else statusHtml = \`<span class="badge bg-orange">\${rem} Days Balance</span>\`;
-    }
-
-    return \`
-      <tr>
-        <td><b>\${idx + 1}</b></td>
-        <td><b>\${m.name}</b></td>
-        <td>\${todayStr}</td>
-        <td>₹\${m.fee}</td>
-        <td>\${statusHtml}</td>
-        <td><span class="badge bg-green">\${m.growth}%</span></td>
-        <td>\${m.contact}</td>
-      </tr>
-    \`;
-  }).join('');
-
-  document.getElementById('app').innerHTML = \`
-    <div class="card-4k">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;">
-        <div>
-          <h2 style="color:var(--lime);">SUPREME ADMIN REPORT DASHBOARD</h2>
-          <p style="color:rgba(255,255,255,0.6);font-size:13px;">Daily-to-Monthly Live Member Tracker</p>
-        </div>
-        <div class="badge bg-green">TODAY: \${todayStr}</div>
-      </div>
-      <div class="table-box">
-        <table>
-          <thead>
-            <tr>
-              <th>SL NO.</th>
-              <th>NAME</th>
-              <th>DATE</th>
-              <th>FEES</th>
-              <th>STATUS</th>
-              <th>GROWTH</th>
-              <th>CONTACT NUMBER</th>
-            </tr>
-          </thead>
-          <tbody>\${rows || '<tr><td colspan="7">No records available</td></tr>'}</tbody>
-        </table>
-      </div>
-    </div>
-  \`;
-}
-
-async function showUserPerformance() {
-  renderNav();
-  const res = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
-  if (res.status === 401) return renderLogin();
-  const data = await res.json();
-  const m = data.member;
-
-  document.getElementById('app').innerHTML = \`
-    <div class="card-4k" style="max-width:600px;margin:30px auto;text-align:center;">
-      <div style="font-family:'Orbitron';font-size:12px;letter-spacing:2px;color:var(--lime);margin-bottom:8px;">MEMBER PERFORMANCE DASHBOARD</div>
-      <h1 style="font-size:36px;margin-bottom:24px;color:#fff;">\${m.name.toUpperCase()}</h1>
-
-      <div style="background:rgba(4,7,12,0.9);border-radius:20px;padding:32px;border:1px solid var(--lime);box-shadow:0 0 30px var(--lime-glow);margin-bottom:24px;">
-        <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:8px;">GROWTH STATUS</div>
-        <div style="font-size:72px;font-weight:900;color:var(--lime);font-family:'Orbitron';">\${m.growth}%</div>
-      </div>
-
-      <div class="grid-2">
-        <div style="background:rgba(4,7,12,0.7);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);">
-          <div style="font-size:12px;color:rgba(255,255,255,0.6);">GOAL CATEGORY</div>
-          <div style="font-size:20px;font-weight:bold;color:#fff;margin-top:6px;">Weight \${m.goalCategory}</div>
-        </div>
-        <div style="background:rgba(4,7,12,0.7);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);">
-          <div style="font-size:12px;color:rgba(255,255,255,0.6);">TARGET GOAL WEIGHT</div>
-          <div style="font-size:20px;font-weight:bold;color:var(--lime);margin-top:6px;">\${m.goalWeight} kg</div>
-        </div>
-      </div>
-    </div>
-  \`;
+        '<div class="grid-2">' +
+          '<div style="background:rgba(4,7,12,0.7);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);">' +
+            '<div style="font-size:12px;color:rgba(255,255,255,0.6);">GOAL CATEGORY</div>' +
+            '<div style="font-size:20px;font-weight:bold;color:#fff;margin-top:6px;">Weight ' + m.goalCategory + '</div>' +
+          '</div>' +
+          '<div style="background:rgba(4,7,12,0.7);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);">' +
+            '<div style="font-size:12px;color:rgba(255,255,255,0.6);">TARGET GOAL WEIGHT</div>' +
+            '<div style="font-size:20px;font-weight:bold;color:var(--lime);margin-top:6px;">' + m.goalWeight + ' kg</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  });
 }
 
 function route() {
@@ -675,10 +673,10 @@ function route() {
   else renderLogin();
 }
 
-renderLogin();
+route();
 </script>
 </body>
-</html>\`;
+</html>`;
 
   res.end(page);
 }
@@ -761,6 +759,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`TheGym Portal running on http://localhost:${PORT}`);
+  console.log("TheGym Portal running on http://localhost:" + PORT);
   connectMongo();
 });
