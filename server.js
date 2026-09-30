@@ -5,14 +5,18 @@ const { Server } = require('socket.io');
 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/thegym';
-const SECRET_ADMIN = process.env.SECRET_ADMIN || 'TGTA26';
+
+// Secret Keys (Set to accept VAIXXXI for Supreme)
+const SECRET_ADMIN = process.env.SECRET_ADMIN || 'SKTCB';
 const SECRET_SUPREME = process.env.SECRET_SUPREME || 'VAIXXXI';
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Essential middleware for parsing request bodies
+// ==========================================
+// ESSENTIAL BODY-PARSING MIDDLEWARE
+// ==========================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -50,6 +54,7 @@ mongoose.connect(MONGODB_URI)
 // Authenticate Role based on Secret Keys
 app.post('/api/auth', (req, res) => {
   const secretKey = req.body ? req.body.secretKey : null;
+  console.log('Incoming Login Attempt with Key:', secretKey);
 
   if (!secretKey) {
     return res.status(400).json({ success: false, message: 'No key provided!' });
@@ -446,9 +451,9 @@ const HTML_CONTENT = `<!DOCTYPE html>
     </div>
 
     <div class="login-container">
-      <form class="login-card" onsubmit="handleLogin(event)">
+      <form id="loginForm" class="login-card">
         <input type="password" id="secretKeyInput" placeholder="ENTER SECRET KEY" autocomplete="off" required />
-        <button type="submit">Login</button>
+        <button type="submit" id="loginBtn">Login</button>
       </form>
     </div>
 
@@ -556,16 +561,30 @@ const HTML_CONTENT = `<!DOCTYPE html>
 
   <script>
     const socket = io();
-    document.getElementById('memberPaidOn').valueAsDate = new Date();
+    const paidOnInput = document.getElementById('memberPaidOn');
+    if (paidOnInput) paidOnInput.valueAsDate = new Date();
 
     socket.on('dataUpdate', (members) => {
       renderTables(members);
     });
 
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginForm = document.getElementById('loginForm');
+      if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+      }
+    });
+
     async function handleLogin(e) {
       if (e) e.preventDefault();
-      const secretKey = document.getElementById('secretKeyInput').value.trim();
-      if (!secretKey) return alert('Please enter secret key!');
+      
+      const secretKeyInput = document.getElementById('secretKeyInput');
+      const secretKey = secretKeyInput ? secretKeyInput.value.trim() : '';
+
+      if (!secretKey) {
+        alert('Please enter secret key!');
+        return;
+      }
 
       try {
         const res = await fetch('/api/auth', {
