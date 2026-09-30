@@ -182,7 +182,7 @@ function sendHTML(res) {
 
   header {
     display: flex;
-    justify-space-between;
+    justify-content: space-between;
     align-items: center;
     padding: 16px 32px;
     background: rgba(8, 12, 18, 0.95);
@@ -343,10 +343,19 @@ function sendHTML(res) {
     </svg>
     <div class="brand-text">TheGym</div>
   </div>
-  <div id="navRight"></div>
+  <div id="navRight"><span class="badge bg-green">4K SYSTEM READY</span></div>
 </header>
 
-<div class="wrapper" id="app"></div>
+<div class="wrapper" id="app">
+  <!-- Hardcoded Direct Fallback View to avoid blank screen under any condition -->
+  <div class="card-4k" style="max-width:440px;margin:60px auto;text-align:center;">
+    <h2 style="color:var(--lime);margin-bottom:8px;">PORTAL ACCESS</h2>
+    <p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:24px;">Enter Secret Key to Access Portal</p>
+    <input type="password" id="keyInput" placeholder="ENTER SECRET KEY" style="text-align:center;letter-spacing:4px;font-size:18px;" autofocus>
+    <button onclick="login()">VERIFY SECRET KEY →</button>
+    <div id="err" style="color:#ff6347;font-size:13px;margin-top:16px;"></div>
+  </div>
+</div>
 
 <footer>
   TheGym +91 70079 47859, WhatsApp +91 78958 32442, ®CareerBoot ©2026
@@ -694,7 +703,12 @@ function route() {
   else renderLogin();
 }
 
-window.addEventListener('DOMContentLoaded', route);
+// Ensure execution on ready or trigger immediately
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', route);
+} else {
+  route();
+}
 </script>
 </body>
 </html>`;
