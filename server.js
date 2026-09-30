@@ -2,7 +2,6 @@ const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
 const { Server } = require('socket.io');
-const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/thegym';
@@ -114,7 +113,7 @@ app.get('/', (req, res) => {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>TheGym | Premium Fitness Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
@@ -124,12 +123,14 @@ app.get('/', (req, res) => {
       margin: 0;
       padding: 0;
       font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
     body {
       background: #08080a;
       color: #ffffff;
       overflow-x: hidden;
       min-height: 100vh;
+      min-height: 100dvh;
     }
 
     /* Screen Sections */
@@ -137,39 +138,44 @@ app.get('/', (req, res) => {
       display: none;
       width: 100vw;
       min-height: 100vh;
+      min-height: 100dvh;
     }
     .screen.active {
       display: flex;
       flex-direction: column;
     }
 
-    /* LOGIN SCREEN LAYOUT: 15% - 25% - 60% */
+    /* MOBILE-OPTIMIZED LOGIN SCREEN */
     #login-screen {
-      height: 100vh;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
+      justify-content: space-between;
       background: radial-gradient(circle at top, #1a1a24 0%, #08080a 100%);
+      position: relative;
     }
 
-    /* Top 15%: Branding Header */
+    /* Top Branding Header */
     .brand-header {
-      height: 15vh;
+      padding: 20px 15px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 15px;
+      gap: 12px;
       border-bottom: 1px solid rgba(255,255,255,0.05);
-      background: rgba(0,0,0,0.3);
+      background: rgba(0,0,0,0.4);
       backdrop-filter: blur(10px);
+      z-index: 10;
     }
     .brand-header svg {
-      width: 60px;
-      height: 60px;
+      width: clamp(40px, 8vw, 60px);
+      height: clamp(40px, 8vw, 60px);
       filter: drop-shadow(0 0 10px #ff0055);
     }
     .brand-title {
       font-family: 'Teko', sans-serif;
-      font-size: 3.5rem;
+      font-size: clamp(2.5rem, 8vw, 3.8rem);
       letter-spacing: 3px;
       text-transform: uppercase;
       background: linear-gradient(45deg, #ff0055, #ff5500);
@@ -177,38 +183,48 @@ app.get('/', (req, res) => {
       -webkit-text-fill-color: transparent;
     }
 
-    /* Next 25%: Login Area */
+    /* Middle Login Area */
     .login-container {
-      height: 25vh;
+      padding: 20px 15px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 0 20px;
       z-index: 10;
+      width: 100%;
     }
     .login-card {
       background: rgba(20, 20, 28, 0.85);
       border: 1px solid rgba(255, 0, 85, 0.3);
       box-shadow: 0 0 30px rgba(255, 0, 85, 0.15);
-      padding: 20px 30px;
+      padding: 16px 20px;
       border-radius: 16px;
       display: flex;
-      gap: 15px;
+      flex-direction: row;
+      gap: 10px;
       align-items: center;
       backdrop-filter: blur(15px);
+      width: 90%;
+      max-width: 450px;
+    }
+    @media (max-width: 480px) {
+      .login-card {
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px;
+      }
     }
     .login-card input {
       background: #0d0d12;
       border: 1px solid #333;
       color: #fff;
-      padding: 14px 20px;
+      padding: 12px 16px;
       border-radius: 8px;
-      font-size: 1.1rem;
+      font-size: 1rem;
       outline: none;
       letter-spacing: 2px;
       text-align: center;
-      width: 280px;
+      width: 100%;
       transition: all 0.3s;
     }
     .login-card input:focus {
@@ -219,13 +235,15 @@ app.get('/', (req, res) => {
       background: linear-gradient(45deg, #ff0055, #ff5500);
       border: none;
       color: #fff;
-      padding: 14px 30px;
+      padding: 12px 24px;
       border-radius: 8px;
       font-weight: 700;
       font-size: 1rem;
       cursor: pointer;
       text-transform: uppercase;
       letter-spacing: 1px;
+      width: 100%;
+      white-space: nowrap;
       transition: transform 0.2s, box-shadow 0.2s;
     }
     .login-card button:hover {
@@ -233,9 +251,10 @@ app.get('/', (req, res) => {
       box-shadow: 0 0 20px rgba(255,0,85,0.5);
     }
 
-    /* Remaining 60%: 4D Interactive Canvas Area */
+    /* Interactive 4D Canvas Container */
     .animation-container {
-      height: 60vh;
+      flex: 1;
+      min-height: 320px;
       position: relative;
       width: 100%;
       overflow: hidden;
@@ -249,7 +268,7 @@ app.get('/', (req, res) => {
 
     /* DASHBOARDS STYLING */
     .dashboard {
-      padding: 40px;
+      padding: clamp(15px, 4vw, 40px);
       max-width: 1600px;
       margin: 0 auto;
       width: 100%;
@@ -258,13 +277,15 @@ app.get('/', (req, res) => {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
       border-bottom: 1px solid rgba(255,255,255,0.1);
+      flex-wrap: wrap;
+      gap: 15px;
     }
     .dash-header h1 {
       font-family: 'Teko', sans-serif;
-      font-size: 3rem;
+      font-size: clamp(2rem, 5vw, 3rem);
       letter-spacing: 2px;
       text-transform: uppercase;
     }
@@ -274,7 +295,7 @@ app.get('/', (req, res) => {
       color: #ff0055;
       padding: 6px 16px;
       border-radius: 20px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 700;
     }
     .badge-admin {
@@ -283,22 +304,22 @@ app.get('/', (req, res) => {
       color: #00d4ff;
       padding: 6px 16px;
       border-radius: 20px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 700;
     }
 
     /* Admin Options */
     .admin-options {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 30px;
-      margin-top: 40px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
     }
     .option-card {
       background: rgba(20,20,28,0.6);
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 20px;
-      padding: 50px 30px;
+      padding: 35px 25px;
       text-align: center;
       cursor: pointer;
       transition: all 0.3s;
@@ -306,39 +327,40 @@ app.get('/', (req, res) => {
     }
     .option-card:hover {
       border-color: #ff0055;
-      transform: translateY(-8px);
+      transform: translateY(-5px);
       box-shadow: 0 10px 30px rgba(255,0,85,0.2);
     }
     .option-card h3 {
-      font-size: 2rem;
-      margin-bottom: 15px;
+      font-size: 1.8rem;
+      margin-bottom: 10px;
       font-family: 'Teko', sans-serif;
       letter-spacing: 1px;
     }
 
-    /* Tables */
+    /* Responsive Tables */
     .table-container {
       background: rgba(18,18,24,0.8);
       border-radius: 16px;
       border: 1px solid rgba(255,255,255,0.08);
-      overflow: hidden;
+      overflow-x: auto;
       box-shadow: 0 20px 40px rgba(0,0,0,0.5);
     }
     table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
+      min-width: 600px;
     }
     th, td {
-      padding: 18px 24px;
-      font-size: 1.05rem;
+      padding: 14px 18px;
+      font-size: 0.95rem;
     }
     th {
       background: rgba(255,255,255,0.03);
       color: #888;
       font-weight: 600;
       text-transform: uppercase;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       letter-spacing: 1px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
     }
@@ -370,6 +392,7 @@ app.get('/', (req, res) => {
       z-index: 100;
       align-items: center;
       justify-content: center;
+      padding: 15px;
     }
     .popup-overlay.active {
       display: flex;
@@ -379,9 +402,9 @@ app.get('/', (req, res) => {
       border: 1px solid rgba(255, 0, 85, 0.4);
       box-shadow: 0 0 50px rgba(255, 0, 85, 0.3);
       border-radius: 20px;
-      padding: 40px;
+      padding: 30px 25px;
       width: 100%;
-      max-width: 500px;
+      max-width: 450px;
       position: relative;
       animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
@@ -391,29 +414,29 @@ app.get('/', (req, res) => {
     }
     .popup-box h2 {
       font-family: 'Teko', sans-serif;
-      font-size: 2.5rem;
+      font-size: 2.2rem;
       letter-spacing: 1px;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       color: #ff0055;
       text-transform: uppercase;
     }
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     .form-group label {
       display: block;
-      margin-bottom: 8px;
-      font-size: 0.9rem;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
       color: #aaa;
     }
     .form-group input {
       width: 100%;
       background: #09090d;
       border: 1px solid #2a2a38;
-      padding: 12px 16px;
+      padding: 12px 14px;
       color: #fff;
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.95rem;
       outline: none;
     }
     .form-group input:focus {
@@ -421,8 +444,8 @@ app.get('/', (req, res) => {
     }
     .btn-group {
       display: flex;
-      gap: 15px;
-      margin-top: 30px;
+      gap: 12px;
+      margin-top: 25px;
     }
     .btn-submit {
       flex: 1;
@@ -447,7 +470,7 @@ app.get('/', (req, res) => {
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.2);
       color: #fff;
-      padding: 8px 18px;
+      padding: 8px 16px;
       border-radius: 8px;
       cursor: pointer;
     }
@@ -463,7 +486,7 @@ app.get('/', (req, res) => {
   <!-- 1. LOGIN SCREEN -->
   <!-- ========================================== -->
   <div id="login-screen" class="screen active">
-    <!-- Top 15%: TG Logo & Branding -->
+    <!-- Branding Header -->
     <div class="brand-header">
       <svg viewBox="0 0 100 100">
         <path d="M20,20 L80,20 L80,35 L55,35 L55,80 L40,80 L40,35 L20,35 Z" fill="#ff0055"/>
@@ -472,7 +495,7 @@ app.get('/', (req, res) => {
       <div class="brand-title">TheGym</div>
     </div>
 
-    <!-- Next 25%: Login Area -->
+    <!-- Login Form Area -->
     <div class="login-container">
       <div class="login-card">
         <input type="password" id="secretKeyInput" placeholder="ENTER SECRET KEY" />
@@ -480,7 +503,7 @@ app.get('/', (req, res) => {
       </div>
     </div>
 
-    <!-- Remaining 60%: 4D Weightlifting Animation Canvas -->
+    <!-- 4D Weightlifting Canvas Animation -->
     <div class="animation-container">
       <canvas id="animationCanvas"></canvas>
     </div>
@@ -511,7 +534,7 @@ app.get('/', (req, res) => {
       </div>
 
       <!-- Data Sheet Section -->
-      <div id="adminDataSheetContainer" style="margin-top: 40px; display: none;">
+      <div id="adminDataSheetContainer" style="margin-top: 30px; display: none;">
         <h2 style="font-family:'Teko'; font-size: 2rem; margin-bottom: 15px;">Member Data Sheet</h2>
         <div class="table-container">
           <table>
@@ -544,7 +567,7 @@ app.get('/', (req, res) => {
         <button class="btn-logout" onclick="logout()">Logout</button>
       </div>
 
-      <h2 style="font-family:'Teko'; font-size: 2rem; margin-bottom: 15px; color:#aaa;">
+      <h2 style="font-family:'Teko'; font-size: 1.8rem; margin-bottom: 15px; color:#aaa;">
         Live Fees Renewal Status (Sorted by Nearest Date)
       </h2>
 
@@ -733,84 +756,186 @@ app.get('/', (req, res) => {
     }
 
     // ==========================================
-    // 4D Interactive Canvas Animation (Man & Woman Lifting Weights)
+    // ADVANCED 4D VECTOR MESH CANVAS ANIMATION
+    // High-performance dynamic mesh rendering with dynamic depth, flexing barbell physics & glow particles
     // ==========================================
     const canvas = document.getElementById('animationCanvas');
     const ctx = canvas.getContext('2d');
 
     function resizeCanvas() {
-      canvas.width = canvas.parentElement.clientWidth;
-      canvas.height = canvas.parentElement.clientHeight;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    let angle = 0;
+    let animTime = 0;
 
-    function drawLifter(x, y, scale, timeOffset, isWoman) {
+    // Background floating energy particles
+    const particles = Array.from({ length: 30 }, () => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: Math.random() * 2 + 1,
+      speedY: Math.random() * 0.5 + 0.2,
+      alpha: Math.random() * 0.5 + 0.2
+    }));
+
+    function draw4DLifter(centerX, centerY, baseScale, phaseShift, isFemale) {
       ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(scale, scale);
+      
+      const width = canvas.parentElement.getBoundingClientRect().width;
+      const scale = baseScale * Math.min(width / 600, 1.2);
 
-      // 4D depth perspective oscillator
-      const squatHeight = Math.sin(angle + timeOffset) * 25; 
-      const colorGlow = isWoman ? '#ff0055' : '#00d4ff';
+      // Squat depth animation loop using sine wave cycle
+      const squatProgress = (Math.sin(animTime + phaseShift) + 1) / 2; // 0 (Standing) to 1 (Deep Squat)
+      const squatY = squatProgress * 45;
+      
+      // 4D Perspective scale variation (simulating motion towards/away from camera)
+      const depthScale = 1 + (squatProgress * 0.08);
 
-      // Barbell & Weights
-      ctx.strokeStyle = '#666';
-      ctx.lineWidth = 6;
+      ctx.translate(centerX, centerY + squatY);
+      ctx.scale(scale * depthScale, scale * depthScale);
+
+      const primaryColor = isFemale ? '#ff0055' : '#00d4ff';
+      const accentColor = isFemale ? '#ff5500' : '#0077ff';
+
+      // 1. BARBELL & FLEXING OLYMPIC BAR
+      const barFlex = squatProgress * 6; // Bar flexing under heavy load
       ctx.beginPath();
-      ctx.moveTo(-70, -60 + squatHeight);
-      ctx.lineTo(70, -60 + squatHeight);
+      ctx.moveTo(-110, -70 + barFlex);
+      ctx.quadraticCurveTo(0, -65, 110, -70 + barFlex);
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#cccccc';
+      ctx.shadowColor = '#000000';
+      ctx.shadowBlur = 10;
       ctx.stroke();
 
-      // Heavy Weight Plates
-      ctx.fillStyle = colorGlow;
-      ctx.shadowColor = colorGlow;
-      ctx.shadowBlur = 15;
-      ctx.fillRect(-85, -85 + squatHeight, 15, 50);
-      ctx.fillRect(70, -85 + squatHeight, 15, 50);
+      // 2. HEAVY OLYMPIC WEIGHT PLATES (3D Stacked Layers)
+      const plateOffsets = [-105, -95, 95, 105];
+      plateOffsets.forEach((px, idx) => {
+        const isOuter = idx === 0 || idx === 3;
+        const pHeight = isOuter ? 70 : 85;
+        const pWidth = 8;
+        const py = -70 + barFlex - (pHeight / 2);
 
-      // Body Structure
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 4;
-      ctx.shadowBlur = 0;
+        // Plate Shadow / Glow
+        ctx.fillStyle = isOuter ? accentColor : primaryColor;
+        ctx.shadowColor = primaryColor;
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.roundRect(px - pWidth / 2, py, pWidth, pHeight, 3);
+        ctx.fill();
+
+        // 3D Inner Plate Ring Details
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px - pWidth / 2 + 1, py + 4, pWidth - 2, pHeight - 8);
+      });
+
+      ctx.shadowBlur = 0; // Reset shadow
+
+      // 3. ANATOMICAL VECTOR MESH BODY
+      const headY = -80 - (squatProgress * 5);
+      const shoulderY = -60;
+      const hipY = 0;
+      const kneeX = isFemale ? 28 : 34;
+      const kneeY = 35 - (squatProgress * 20); // Knees bend outward/downward
+      const footX = 22;
+      const footY = 65 - squatY; // Feet stay firmly grounded
 
       // Head
       ctx.beginPath();
-      ctx.arc(0, -70 + squatHeight, 12, 0, Math.PI * 2);
+      ctx.arc(0, headY, isFemale ? 11 : 13, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = primaryColor;
       ctx.stroke();
 
-      // Torso
+      // Torso (Trapezoid Mesh)
       ctx.beginPath();
-      ctx.moveTo(0, -58 + squatHeight);
-      ctx.lineTo(0, -10 + squatHeight);
+      ctx.moveTo(- (isFemale ? 18 : 24), shoulderY);
+      ctx.lineTo(isFemale ? 18 : 24, shoulderY);
+      ctx.lineTo(isFemale ? 12 : 16, hipY);
+      ctx.lineTo(- (isFemale ? 12 : 16), hipY);
+      ctx.closePath();
+      const torsoGrad = ctx.createLinearGradient(0, shoulderY, 0, hipY);
+      torsoGrad.addColorStop(0, primaryColor);
+      torsoGrad.addColorStop(1, '#111118');
+      ctx.fillStyle = torsoGrad;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
       ctx.stroke();
 
-      // Squatting Legs
+      // Arms gripping bar
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(0, -10 + squatHeight);
-      ctx.lineTo(-25, 15 + squatHeight / 2);
-      ctx.lineTo(-30, 50);
-      ctx.moveTo(0, -10 + squatHeight);
-      ctx.lineTo(25, 15 + squatHeight / 2);
-      ctx.lineTo(30, 50);
+      // Left arm
+      ctx.moveTo(- (isFemale ? 18 : 24), shoulderY);
+      ctx.lineTo(-50, -68 + barFlex);
+      // Right arm
+      ctx.moveTo((isFemale ? 18 : 24), shoulderY);
+      ctx.lineTo(50, -68 + barFlex);
       ctx.stroke();
+
+      // Muscular Legs (Thighs + Calves)
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = primaryColor;
+      
+      // Left Leg
+      ctx.beginPath();
+      ctx.moveTo(- (isFemale ? 10 : 14), hipY);
+      ctx.lineTo(-kneeX, kneeY);
+      ctx.lineTo(-footX, footY);
+      ctx.stroke();
+
+      // Right Leg
+      ctx.beginPath();
+      ctx.moveTo((isFemale ? 10 : 14), hipY);
+      ctx.lineTo(kneeX, kneeY);
+      ctx.lineTo(footX, footY);
+      ctx.stroke();
+
+      // Shoes / Base
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-footX - 6, footY - 2, 12, 5);
+      ctx.fillRect(footX - 6, footY - 2, 12, 5);
 
       ctx.restore();
     }
 
     function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const width = canvas.parentElement.getBoundingClientRect().width;
+      const height = canvas.parentElement.getBoundingClientRect().height;
 
-      const width = canvas.width;
-      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
 
-      // Draw Male Lifter (Left) & Female Lifter (Right)
-      drawLifter(width * 0.35, height * 0.65, 1.2, 0, false);
-      drawLifter(width * 0.65, height * 0.65, 1.1, Math.PI, true);
+      // Render Floating Dust Particles
+      particles.forEach(p => {
+        p.y -= p.speedY;
+        if (p.y < 0) p.y = height;
+        ctx.fillStyle = `rgba(255, 0, 85, ${p.alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
-      angle += 0.04;
+      // Adaptive dual position on mobile vs desktop screens
+      if (width < 600) {
+        // Mobile Stacked/Centere Dual View
+        draw4DLifter(width * 0.3, height * 0.52, 0.8, 0, false);
+        draw4DLifter(width * 0.7, height * 0.52, 0.75, Math.PI, true);
+      } else {
+        // Desktop Wide View
+        draw4DLifter(width * 0.32, height * 0.55, 1.0, 0, false);
+        draw4DLifter(width * 0.68, height * 0.55, 0.95, Math.PI, true);
+      }
+
+      animTime += 0.035;
       requestAnimationFrame(animate);
     }
 
