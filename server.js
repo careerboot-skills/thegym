@@ -1,5 +1,5 @@
 // ================================================================
-// THEGYM — 4K HIGH-VIBE GYM MANAGEMENT & PERFORMANCE PORTAL
+// THEGYM — FORCE INPUT PORTAL
 // ================================================================
 
 const http = require("http");
@@ -20,7 +20,9 @@ const sessions = new Map();
 function json(res, status, data) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0",
     "X-Content-Type-Options": "nosniff"
   });
   res.end(JSON.stringify(data));
@@ -108,7 +110,12 @@ async function connectMongo() {
 }
 
 function sendHTML(res) {
-  res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+  res.writeHead(200, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0"
+  });
 
   const page = `<!doctype html>
 <html lang="en">
@@ -127,26 +134,6 @@ function sendHTML(res) {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
-    position: relative;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    top: -10%; left: -10%;
-    width: 120%; height: 120%;
-    background: 
-      radial-gradient(circle at 20% 20%, rgba(184, 255, 61, 0.12) 0%, transparent 40%),
-      radial-gradient(circle at 80% 80%, rgba(255, 77, 77, 0.08) 0%, transparent 40%),
-      radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.06) 0%, transparent 50%);
-    z-index: -1;
-    animation: pulseBg 12s ease-in-out infinite alternate;
-  }
-
-  @keyframes pulseBg {
-    0% { transform: scale(1) rotate(0deg); }
-    100% { transform: scale(1.08) rotate(3deg); }
   }
 
   .top-nav {
@@ -154,35 +141,15 @@ function sendHTML(res) {
     justify-space: space-between;
     align-items: center;
     padding: 16px 24px;
-    background: rgba(10, 14, 22, 0.85);
-    backdrop-filter: blur(20px);
+    background: rgba(10, 14, 22, 0.95);
     border-bottom: 1px solid rgba(184, 255, 61, 0.2);
-    position: sticky;
-    top: 0;
-    z-index: 100;
   }
-  .brand-logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .tg-badge {
-    width: 44px;
-    height: 44px;
-    background: linear-gradient(135deg, #b8ff3d, #7acc00);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 20px rgba(184, 255, 61, 0.5);
-  }
-  .tg-badge svg { width: 28px; height: 28px; fill: #030508; }
   .brand-title {
     font-family: 'Orbitron', sans-serif;
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 900;
-    letter-spacing: 2px;
     color: #fff;
+    letter-spacing: 2px;
   }
 
   .main-wrapper {
@@ -191,23 +158,14 @@ function sendHTML(res) {
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
-    z-index: 10;
   }
 
   .card-4k {
-    background: rgba(15, 21, 32, 0.85);
-    backdrop-filter: blur(25px);
+    background: rgba(15, 21, 32, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 20px;
     padding: 28px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.6);
     margin-bottom: 24px;
-  }
-
-  h1, h2, h3 {
-    font-family: 'Orbitron', sans-serif;
-    letter-spacing: 1px;
-    text-transform: uppercase;
   }
 
   input, select {
@@ -221,10 +179,7 @@ function sendHTML(res) {
     margin-bottom: 14px;
     outline: none;
   }
-  input:focus, select:focus {
-    border-color: #b8ff3d;
-    box-shadow: 0 0 15px rgba(184, 255, 61, 0.3);
-  }
+  input:focus, select:focus { border-color: #b8ff3d; }
 
   button {
     width: 100%;
@@ -237,14 +192,12 @@ function sendHTML(res) {
     font-size: 15px;
     cursor: pointer;
     font-family: 'Orbitron', sans-serif;
-    letter-spacing: 1px;
-    box-shadow: 0 0 20px rgba(184, 255, 61, 0.3);
   }
+
   .btn-sub {
     background: transparent;
     border: 1px solid rgba(255,255,255,0.25);
     color: #fff;
-    box-shadow: none;
   }
 
   .status-badge {
@@ -253,7 +206,6 @@ function sendHTML(res) {
     border-radius: 8px;
     font-size: 12px;
     font-weight: 800;
-    text-transform: uppercase;
   }
   .status-green { background: rgba(0, 230, 118, 0.2); color: #00e676; border: 1px solid #00e676; }
   .status-yellow { background: rgba(255, 214, 0, 0.2); color: #ffd600; border: 1px solid #ffd600; }
@@ -262,28 +214,8 @@ function sendHTML(res) {
 
   .table-responsive { overflow-x: auto; margin-top: 16px; }
   table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-  th {
-    padding: 14px;
-    background: rgba(255,255,255,0.03);
-    color: #91a0ad;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 11px;
-    border-bottom: 2px solid rgba(255,255,255,0.1);
-  }
-  td {
-    padding: 14px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    white-space: nowrap;
-  }
-
-  .footer {
-    text-align: center;
-    padding: 20px;
-    background: rgba(5, 8, 14, 0.9);
-    border-top: 1px solid rgba(255,255,255,0.1);
-    color: #728191;
-    font-size: 13px;
-  }
+  th { padding: 12px; background: rgba(255,255,255,0.03); color: #91a0ad; font-family: 'Orbitron', sans-serif; font-size: 11px; }
+  td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); white-space: nowrap; }
 
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media(max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
@@ -292,46 +224,39 @@ function sendHTML(res) {
 <body>
 
 <div class="top-nav">
-  <div class="brand-logo">
-    <div class="tg-badge">
-      <svg viewBox="0 0 24 24"><path d="M5,4H19A2,2 0 0,1 21,6V8H3V6A2,2 0 0,1 5,4M3,10H21V18A2,2 0 0,1 19,20H5A2,2 0 0,1 3,18V10M11,12V16H13V12H11Z"/></svg>
-    </div>
-    <div class="brand-title">THEGYM</div>
-  </div>
+  <div class="brand-title">THEGYM</div>
   <div id="nav-btn"></div>
 </div>
 
 <div class="main-wrapper" id="app"></div>
 
-<div class="footer">
-  TheGym +91 70079 47859, WhatsApp +91 78958 32442, ®CareerBoot ©2026
-</div>
-
 <script>
+// FORCE CLEAR UNRELIABLE LOCAL STORAGE ON INITIAL LOAD IF UNVERIFIED
 var token = localStorage.getItem('tg_token');
 var role = localStorage.getItem('tg_role');
 
 function renderNav() {
   var el = document.getElementById('nav-btn');
   if (token) {
-    el.innerHTML = '<button onclick="logout()" class="btn-sub" style="width:auto;padding:8px 16px;">LOGOUT (' + (role ? role.toUpperCase() : 'USER') + ')</button>';
+    el.innerHTML = '<button onclick="logout()" class="btn-sub" style="width:auto;padding:8px 16px;">LOGOUT</button>';
   } else {
     el.innerHTML = '<span class="status-badge status-green">PORTAL ONLINE</span>';
   }
 }
 
-function landing() {
-  localStorage.clear();
+function renderLoginBox() {
+  localStorage.removeItem('tg_token');
+  localStorage.removeItem('tg_role');
   token = null;
   role = null;
   renderNav();
 
   document.getElementById('app').innerHTML = 
     '<div class="card-4k" style="max-width:420px;margin:40px auto;text-align:center;">' +
-      '<h1 style="font-size:26px;color:#b8ff3d;margin-bottom:8px;">THEGYM PORTAL</h1>' +
-      '<p style="color:#91a0ad;font-size:14px;margin-bottom:24px;">Enter Secret Key to proceed.</p>' +
-      '<input type="password" id="keyInput" placeholder="ENTER SECRET KEY" autocomplete="off" style="text-align:center;letter-spacing:3px;">' +
-      '<button onclick="doLogin()">ACCESS PORTAL →</button>' +
+      '<h1 style="font-size:24px;color:#b8ff3d;margin-bottom:8px;font-family:\'Orbitron\';">SECRET KEY ACCESS</h1>' +
+      '<p style="color:#91a0ad;font-size:13px;margin-bottom:20px;">Enter your assigned Secret Key below:</p>' +
+      '<input type="password" id="keyInput" placeholder="ENTER SECRET KEY" style="text-align:center;letter-spacing:3px;" autofocus>' +
+      '<button onclick="doLogin()">VERIFY KEY →</button>' +
       '<div id="err" style="color:#ff6347;font-size:13px;margin-top:14px;"></div>' +
     '</div>';
 }
@@ -364,14 +289,14 @@ function doLogin() {
 }
 
 function logout() {
-  landing();
+  renderLoginBox();
 }
 
 function showAdminPanel() {
   renderNav();
   document.getElementById('app').innerHTML = 
     '<div class="card-4k">' +
-      '<h2 style="color:#b8ff3d;margin-bottom:16px;">ADMIN PANEL</h2>' +
+      '<h2 style="color:#b8ff3d;margin-bottom:16px;font-family:\'Orbitron\';">ADMIN PANEL</h2>' +
       '<div class="grid-2">' +
         '<button onclick="showRegisterForm()">MEMBERS REGISTER PAGE</button>' +
         '<button onclick="showMembersSheet()" class="btn-sub">MEMBERS PROFILE PAGE</button>' +
@@ -384,7 +309,7 @@ function showAdminPanel() {
 function showRegisterForm() {
   document.getElementById('admin-content').innerHTML = 
     '<div class="card-4k" style="max-width:650px;margin:0 auto;">' +
-      '<h2 style="margin-bottom:20px;font-size:20px;">NEW MEMBER REGISTRATION</h2>' +
+      '<h3 style="margin-bottom:20px;font-size:18px;font-family:\'Orbitron\';">NEW MEMBER REGISTRATION</h3>' +
       '<form onsubmit="handleRegister(event)">' +
         '<input name="name" placeholder="Member Full Name" required>' +
         '<input name="secretKey" placeholder="Assign Secret Key" required>' +
@@ -441,7 +366,7 @@ function handleRegister(e) {
 function showMembersSheet() {
   fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } })
   .then(function(res) {
-    if (res.status === 401) { landing(); return null; }
+    if (res.status === 401) { renderLoginBox(); return null; }
     return res.json();
   })
   .then(function(data) {
@@ -460,7 +385,7 @@ function showMembersSheet() {
 
     document.getElementById('admin-content').innerHTML = 
       '<div class="card-4k">' +
-        '<h2>MEMBERS PROFILE SHEET</h2>' +
+        '<h3 style="font-family:\'Orbitron\';margin-bottom:12px;">MEMBERS PROFILE SHEET</h3>' +
         '<div class="table-responsive">' +
           '<table>' +
             '<thead><tr><th>Name</th><th>Joining Date</th><th>Joining Weight</th><th>Current Weight</th><th>Growth Status (%)</th></tr></thead>' +
@@ -487,7 +412,7 @@ function showSupremeDashboard() {
   renderNav();
   fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } })
   .then(function(res) {
-    if (res.status === 401) { landing(); return null; }
+    if (res.status === 401) { renderLoginBox(); return null; }
     return res.json();
   })
   .then(function(data) {
@@ -524,7 +449,7 @@ function showSupremeDashboard() {
     document.getElementById('app').innerHTML = 
       '<div class="card-4k">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">' +
-          '<div><h2 style="color:#b8ff3d;">SUPREME ADMIN REPORT DASHBOARD</h2><p style="color:#91a0ad;font-size:13px;">Daily-to-Monthly Live Tracking System</p></div>' +
+          '<div><h2 style="color:#b8ff3d;font-family:\'Orbitron\';">SUPREME ADMIN REPORT DASHBOARD</h2><p style="color:#91a0ad;font-size:13px;">Daily-to-Monthly Live Tracking System</p></div>' +
           '<div class="status-badge status-green">TODAY: ' + todayStr + '</div>' +
         '</div>' +
         '<div class="table-responsive">' +
@@ -541,7 +466,7 @@ function showMemberPerformance() {
   renderNav();
   fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } })
   .then(function(res) {
-    if (res.status === 401) { landing(); return null; }
+    if (res.status === 401) { renderLoginBox(); return null; }
     return res.json();
   })
   .then(function(data) {
@@ -555,17 +480,14 @@ function showMemberPerformance() {
         '<h1 style="font-size:32px;margin:12px 0 20px;color:#fff;">' + m.name.toUpperCase() + '</h1>' +
         '<div style="background:rgba(5,8,14,0.9);border-radius:16px;padding:24px;border:1px solid rgba(184,255,61,0.3);margin-bottom:24px;">' +
           '<div style="font-size:12px;color:#91a0ad;margin-bottom:8px;">GROWTH STATUS</div>' +
-          '<div style="font-size:64px;font-weight:900;color:#b8ff3d;font-family:\'Orbitron\'; text-shadow:0 0 25px rgba(184,255,61,0.5);">' + m.growth + '%</div>' +
-          '<div style="width:100%;background:rgba(255,255,255,0.1);height:12px;border-radius:6px;overflow:hidden;margin-top:16px;">' +
-            '<div style="width:' + Math.min(100, Math.max(0, m.growth)) + '%;background:linear-gradient(90deg, #b8ff3d, #00e676);height:100%;"></div>' +
-          '</div>' +
+          '<div style="font-size:64px;font-weight:900;color:#b8ff3d;font-family:\'Orbitron\';">' + m.growth + '%</div>' +
         '</div>' +
         '<div class="grid-2">' +
-          '<div style="background:rgba(5,8,14,0.8);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">' +
+          '<div style="background:rgba(5,8,14,0.8);padding:16px;border-radius:12px;">' +
             '<div style="font-size:11px;color:#91a0ad;">GOAL CATEGORY</div>' +
             '<div style="font-size:18px;font-weight:bold;color:#fff;margin-top:4px;">' + m.goalCategory + '</div>' +
           '</div>' +
-          '<div style="background:rgba(5,8,14,0.8);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">' +
+          '<div style="background:rgba(5,8,14,0.8);padding:16px;border-radius:12px;">' +
             '<div style="font-size:11px;color:#91a0ad;">TARGET GOAL WEIGHT</div>' +
             '<div style="font-size:18px;font-weight:bold;color:#b8ff3d;margin-top:4px;">' + m.goalWeight + ' kg</div>' +
           '</div>' +
@@ -575,14 +497,15 @@ function showMemberPerformance() {
 }
 
 function route() {
-  if (!token || !role) { landing(); return; }
+  if (!token || !role) { renderLoginBox(); return; }
   if (role === 'supreme') showSupremeDashboard();
   else if (role === 'admin') showAdminPanel();
   else if (role === 'member') showMemberPerformance();
-  else landing();
+  else renderLoginBox();
 }
 
-route();
+// ALWAYS START AT LOGIN BOX UNLESS EXPLICITLY VALIDATED
+renderLoginBox();
 </script>
 </body>
 </html>`;
@@ -678,6 +601,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`TheGym 4K Portal running on port ${PORT}`);
+  console.log(`TheGym Portal running on port ${PORT}`);
   connectMongo();
 });
