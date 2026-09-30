@@ -182,7 +182,7 @@ function sendHTML(res) {
 
   header {
     display: flex;
-    justify-content: space-between;
+    justify-space-between;
     align-items: center;
     padding: 16px 32px;
     background: rgba(8, 12, 18, 0.95);
@@ -358,6 +358,7 @@ var role = localStorage.getItem('tg_role');
 
 function renderNav() {
   var el = document.getElementById('navRight');
+  if (!el) return;
   if (token) {
     el.innerHTML = '<button onclick="logout()" class="btn-secondary" style="padding:10px 20px;width:auto;">LOGOUT</button>';
   } else {
@@ -371,7 +372,10 @@ function renderLogin() {
   token = null; role = null;
   renderNav();
 
-  document.getElementById('app').innerHTML =
+  var app = document.getElementById('app');
+  if (!app) return;
+
+  app.innerHTML =
     '<div class="card-4k" style="max-width:440px;margin:60px auto;text-align:center;">' +
       '<h2 style="color:var(--lime);margin-bottom:8px;">PORTAL ACCESS</h2>' +
       '<p style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:24px;">Enter Secret Key to Access Portal</p>' +
@@ -382,10 +386,11 @@ function renderLogin() {
 }
 
 function login() {
-  var key = document.getElementById('keyInput').value.trim();
+  var keyInput = document.getElementById('keyInput');
+  var key = keyInput ? keyInput.value.trim() : '';
   var err = document.getElementById('err');
-  err.textContent = '';
-  if (!key) { err.textContent = 'Please enter a valid Secret Key'; return; }
+  if (err) err.textContent = '';
+  if (!key) { if (err) err.textContent = 'Please enter a valid Secret Key'; return; }
 
   fetch('/api/login', {
     method: 'POST',
@@ -402,7 +407,7 @@ function login() {
     route();
   })
   .catch(function(e) {
-    err.textContent = e.message;
+    if (err) err.textContent = e.message;
   });
 }
 
@@ -412,7 +417,10 @@ function logout() {
 
 function showAdminPanel() {
   renderNav();
-  document.getElementById('app').innerHTML =
+  var app = document.getElementById('app');
+  if (!app) return;
+
+  app.innerHTML =
     '<div class="card-4k">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">' +
         '<h2 style="color:var(--lime);">ADMIN CONTROL PANEL</h2>' +
@@ -427,7 +435,10 @@ function showAdminPanel() {
 }
 
 function showRegisterForm() {
-  document.getElementById('adminContent').innerHTML =
+  var adminContent = document.getElementById('adminContent');
+  if (!adminContent) return;
+
+  adminContent.innerHTML =
     '<div style="max-width:680px;margin:20px auto;background:rgba(4,7,12,0.6);padding:24px;border-radius:18px;border:1px solid var(--border-line);">' +
       '<h3 style="margin-bottom:20px;color:var(--lime);">MEMBERS REGISTER PAGE</h3>' +
       '<form onsubmit="handleRegister(event)">' +
@@ -512,7 +523,8 @@ function handleRegister(e) {
     showMembersProfileSheet();
   })
   .catch(function(err) {
-    document.getElementById('regErr').textContent = err.message;
+    var regErr = document.getElementById('regErr');
+    if (regErr) regErr.textContent = err.message;
   });
 }
 
@@ -534,22 +546,25 @@ function showMembersProfileSheet() {
       '</tr>';
     }).join('');
 
-    document.getElementById('adminContent').innerHTML =
-      '<h3 style="color:var(--lime);margin-top:12px;">MEMBERS PROFILE SHEET</h3>' +
-      '<div class="table-box">' +
-        '<table>' +
-          '<thead>' +
-            '<tr>' +
-              '<th>NAME</th>' +
-              '<th>JOINING DATE</th>' +
-              '<th>CURRENT DAY WEIGHT</th>' +
-              '<th>JOINING DATE WEIGHT</th>' +
-              '<th>GROWTH STATUS (%)</th>' +
-            '</tr>' +
-          '</thead>' +
-          '<tbody>' + (rows || '<tr><td colspan="5">No members found</td></tr>') + '</tbody>' +
-        '</table>' +
-      '</div>';
+    var adminContent = document.getElementById('adminContent');
+    if (adminContent) {
+      adminContent.innerHTML =
+        '<h3 style="color:var(--lime);margin-top:12px;">MEMBERS PROFILE SHEET</h3>' +
+        '<div class="table-box">' +
+          '<table>' +
+            '<thead>' +
+              '<tr>' +
+                '<th>NAME</th>' +
+                '<th>JOINING DATE</th>' +
+                '<th>CURRENT DAY WEIGHT</th>' +
+                '<th>JOINING DATE WEIGHT</th>' +
+                '<th>GROWTH STATUS (%)</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' + (rows || '<tr><td colspan="5">No members found</td></tr>') + '</tbody>' +
+          '</table>' +
+        '</div>';
+    }
   });
 }
 
@@ -601,32 +616,35 @@ function showSupremeDashboard() {
       '</tr>';
     }).join('');
 
-    document.getElementById('app').innerHTML =
-      '<div class="card-4k">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;">' +
-          '<div>' +
-            '<h2 style="color:var(--lime);">SUPREME ADMIN REPORT DASHBOARD</h2>' +
-            '<p style="color:rgba(255,255,255,0.6);font-size:13px;">Daily-to-Monthly Live Member Tracker</p>' +
+    var app = document.getElementById('app');
+    if (app) {
+      app.innerHTML =
+        '<div class="card-4k">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;">' +
+            '<div>' +
+              '<h2 style="color:var(--lime);">SUPREME ADMIN REPORT DASHBOARD</h2>' +
+              '<p style="color:rgba(255,255,255,0.6);font-size:13px;">Daily-to-Monthly Live Member Tracker</p>' +
+            '</div>' +
+            '<div class="badge bg-green">TODAY: ' + todayStr + '</div>' +
           '</div>' +
-          '<div class="badge bg-green">TODAY: ' + todayStr + '</div>' +
-        '</div>' +
-        '<div class="table-box">' +
-          '<table>' +
-            '<thead>' +
-              '<tr>' +
-                '<th>SL NO.</th>' +
-                '<th>NAME</th>' +
-                '<th>DATE</th>' +
-                '<th>FEES</th>' +
-                '<th>STATUS</th>' +
-                '<th>GROWTH</th>' +
-                '<th>CONTACT NUMBER</th>' +
-              '</tr>' +
-            '</thead>' +
-            '<tbody>' + (rows || '<tr><td colspan="7">No records available</td></tr>') + '</tbody>' +
-          '</table>' +
-        '</div>' +
-      '</div>';
+          '<div class="table-box">' +
+            '<table>' +
+              '<thead>' +
+                '<tr>' +
+                  '<th>SL NO.</th>' +
+                  '<th>NAME</th>' +
+                  '<th>DATE</th>' +
+                  '<th>FEES</th>' +
+                  '<th>STATUS</th>' +
+                  '<th>GROWTH</th>' +
+                  '<th>CONTACT NUMBER</th>' +
+                '</tr>' +
+              '</thead>' +
+              '<tbody>' + (rows || '<tr><td colspan="7">No records available</td></tr>') + '</tbody>' +
+            '</table>' +
+          '</div>' +
+        '</div>';
+    }
   });
 }
 
@@ -641,27 +659,30 @@ function showUserPerformance() {
     if (!data) return;
     var m = data.member;
 
-    document.getElementById('app').innerHTML =
-      '<div class="card-4k" style="max-width:600px;margin:30px auto;text-align:center;">' +
-        '<div style="font-family:\'Orbitron\';font-size:12px;letter-spacing:2px;color:var(--lime);margin-bottom:8px;">MEMBER PERFORMANCE DASHBOARD</div>' +
-        '<h1 style="font-size:36px;margin-bottom:24px;color:#fff;">' + m.name.toUpperCase() + '</h1>' +
+    var app = document.getElementById('app');
+    if (app) {
+      app.innerHTML =
+        '<div class="card-4k" style="max-width:600px;margin:30px auto;text-align:center;">' +
+          '<div style="font-family:\'Orbitron\';font-size:12px;letter-spacing:2px;color:var(--lime);margin-bottom:8px;">MEMBER PERFORMANCE DASHBOARD</div>' +
+          '<h1 style="font-size:36px;margin-bottom:24px;color:#fff;">' + m.name.toUpperCase() + '</h1>' +
 
-        '<div style="background:rgba(4,7,12,0.9);border-radius:20px;padding:32px;border:1px solid var(--lime);box-shadow:0 0 30px var(--lime-glow);margin-bottom:24px;">' +
-          '<div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:8px;">GROWTH STATUS</div>' +
-          '<div style="font-size:72px;font-weight:900;color:var(--lime);font-family:\'Orbitron\';">' + m.growth + '%</div>' +
-        '</div>' +
+          '<div style="background:rgba(4,7,12,0.9);border-radius:20px;padding:32px;border:1px solid var(--lime);box-shadow:0 0 30px var(--lime-glow);margin-bottom:24px;">' +
+            '<div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:8px;">GROWTH STATUS</div>' +
+            '<div style="font-size:72px;font-weight:900;color:var(--lime);font-family:\'Orbitron\';">' + m.growth + '%</div>' +
+          '</div>' +
 
-        '<div class="grid-2">' +
-          '<div style="background:rgba(4,7,12,0.7);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);">' +
-            '<div style="font-size:12px;color:rgba(255,255,255,0.6);">GOAL CATEGORY</div>' +
-            '<div style="font-size:20px;font-weight:bold;color:#fff;margin-top:6px;">Weight ' + m.goalCategory + '</div>' +
+          '<div class="grid-2">' +
+            '<div style="background:rgba(4,7,12,0.7);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);">' +
+              '<div style="font-size:12px;color:rgba(255,255,255,0.6);">GOAL CATEGORY</div>' +
+              '<div style="font-size:20px;font-weight:bold;color:#fff;margin-top:6px;">Weight ' + m.goalCategory + '</div>' +
+            '</div>' +
+            '<div style="background:rgba(4,7,12,0.7);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);">' +
+              '<div style="font-size:12px;color:rgba(255,255,255,0.6);">TARGET GOAL WEIGHT</div>' +
+              '<div style="font-size:20px;font-weight:bold;color:var(--lime);margin-top:6px;">' + m.goalWeight + ' kg</div>' +
+            '</div>' +
           '</div>' +
-          '<div style="background:rgba(4,7,12,0.7);padding:20px;border-radius:16px;border:1px solid rgba(255,255,255,0.1);">' +
-            '<div style="font-size:12px;color:rgba(255,255,255,0.6);">TARGET GOAL WEIGHT</div>' +
-            '<div style="font-size:20px;font-weight:bold;color:var(--lime);margin-top:6px;">' + m.goalWeight + ' kg</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
+        '</div>';
+    }
   });
 }
 
@@ -673,7 +694,7 @@ function route() {
   else renderLogin();
 }
 
-route();
+window.addEventListener('DOMContentLoaded', route);
 </script>
 </body>
 </html>`;
