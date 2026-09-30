@@ -12,7 +12,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// CRITICAL FIX: Parse JSON request bodies for POST endpoints like /api/auth
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ==========================================
 // MONGODB SCHEMA & MODEL
@@ -25,7 +27,6 @@ const memberSchema = new mongoose.Schema({
   renewalDate: { type: Date, required: true }
 }, { timestamps: true });
 
-// Pre-validate hook to calculate exact 30-day renewal date
 memberSchema.pre('validate', function(next) {
   if (this.paidOn) {
     const paid = new Date(this.paidOn);
@@ -49,17 +50,18 @@ mongoose.connect(MONGODB_URI)
 
 // Authenticate Role based on Secret Keys
 app.post('/api/auth', (req, res) => {
-  const { secretKey } = req.body;
+  const { secretKey } = req.body || {};
+
   if (secretKey === SECRET_SUPREME) {
     return res.json({ success: true, role: 'SUPREME', message: 'Welcome Supreme Admin' });
   } else if (secretKey === SECRET_ADMIN) {
     return res.json({ success: true, role: 'ADMIN', message: 'Welcome Admin' });
   } else {
-    return res.status(401).json({ success: false, message: 'Invalid Secret Key!' });
+    return res.json({ success: false, message: 'Invalid Secret Key!' });
   }
 });
 
-// Fetch all members ordered by renewalDate ascending (nearest renewal date first)
+// Fetch all members ordered by renewalDate ascending
 app.get('/api/members', async (req, res) => {
   try {
     const members = await Member.find().sort({ renewalDate: 1 });
@@ -74,7 +76,6 @@ app.post('/api/members', async (req, res) => {
   try {
     const { name, fees, paidOn } = req.body;
     
-    // Auto-increment SL No
     const count = await Member.countDocuments();
     const slNo = count + 1;
 
@@ -89,7 +90,6 @@ app.post('/api/members', async (req, res) => {
 
     await newMember.save();
 
-    // Broadcast update via WebSockets
     const allMembers = await Member.find().sort({ renewalDate: 1 });
     io.emit('dataUpdate', allMembers);
 
@@ -112,7 +112,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TheGym | Premium Fitness Dashboard</title>
+  <title>MyGym | Premium Fitness Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
   <style>
@@ -466,7 +466,7 @@ const HTML_CONTENT = `<!DOCTYPE html>
         <path d="M20,20 L80,20 L80,35 L55,35 L55,80 L40,80 L40,35 L20,35 Z" fill="#ff0055"/>
         <path d="M50,45 L85,45 L85,80 L60,80 L60,65 L70,65 L70,58 L50,58 Z" fill="#ff5500"/>
       </svg>
-      <div class="brand-title">TheGym</div>
+      <div class="brand-title">MyGym</div>
     </div>
 
     <div class="login-container">
@@ -607,10 +607,10 @@ const HTML_CONTENT = `<!DOCTYPE html>
             document.getElementById('admin-dashboard').classList.add('active');
           }
         } else {
-          alert(data.message);
+          alert(data.message || 'Invalid Key!');
         }
       } catch (err) {
-        alert('Authentication failed!');
+        alert('Authentication request failed!');
       }
     }
 
