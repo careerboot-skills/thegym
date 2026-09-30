@@ -1595,14 +1595,11 @@ let role =
    TG SVG LOGO
    ============================================================ */
 
-const logo = `
-
-<svg
+const logoSvg = `<svg
   class="logo"
   viewBox="0 0 100 100"
   xmlns="http://www.w3.org/2000/svg"
 >
-
 <rect
   x="4"
   y="4"
@@ -1611,20 +1608,18 @@ const logo = `
   rx="24"
   fill="#b8ff3d"
 />
-
 <path
   d="M24 30h12v15h28V30h12v40H64V55H36v15H24z"
   fill="#071006"
 />
-
 <circle
   cx="78"
   cy="50"
   r="7"
   fill="#071006"
 />
+</svg>`;
 
-</svg>
 
 `;
 
