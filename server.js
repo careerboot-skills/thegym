@@ -131,7 +131,6 @@ function sendHTML(res) {
     position: relative;
   }
 
-  /* 4D ANIMATED BACKGROUND LIGHTING */
   body::before {
     content: '';
     position: fixed;
@@ -150,20 +149,6 @@ function sendHTML(res) {
     100% { transform: scale(1.08) rotate(3deg); }
   }
 
-  /* GYM VIBING DUMBBELL FLOAT ANIMATION */
-  .gym-sticker {
-    position: fixed;
-    opacity: 0.08;
-    pointer-events: none;
-    z-index: 0;
-    animation: floatSticker 8s infinite ease-in-out alternate;
-  }
-  @keyframes floatSticker {
-    0% { transform: translateY(0px) rotate(0deg); }
-    100% { transform: translateY(-25px) rotate(10deg); }
-  }
-
-  /* TOP NAVBAR */
   .top-nav {
     display: flex;
     justify-content: space-between;
@@ -198,7 +183,6 @@ function sendHTML(res) {
     font-weight: 900;
     letter-spacing: 2px;
     color: #fff;
-    text-shadow: 0 0 10px rgba(255,255,255,0.3);
   }
 
   .main-wrapper {
@@ -210,19 +194,14 @@ function sendHTML(res) {
     z-index: 10;
   }
 
-  /* GLASS CARD CONTAINERS */
   .card-4k {
-    background: rgba(15, 21, 32, 0.75);
+    background: rgba(15, 21, 32, 0.85);
     backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 20px;
     padding: 28px;
     box-shadow: 0 30px 60px rgba(0,0,0,0.6);
     margin-bottom: 24px;
-    transition: transform 0.3s ease, border-color 0.3s ease;
-  }
-  .card-4k:hover {
-    border-color: rgba(184, 255, 61, 0.4);
   }
 
   h1, h2, h3 {
@@ -231,7 +210,6 @@ function sendHTML(res) {
     text-transform: uppercase;
   }
 
-  /* INPUTS & BUTTONS */
   input, select {
     width: 100%;
     padding: 14px 16px;
@@ -242,7 +220,6 @@ function sendHTML(res) {
     font-size: 15px;
     margin-bottom: 14px;
     outline: none;
-    transition: all 0.2s ease;
   }
   input:focus, select:focus {
     border-color: #b8ff3d;
@@ -262,11 +239,6 @@ function sendHTML(res) {
     font-family: 'Orbitron', sans-serif;
     letter-spacing: 1px;
     box-shadow: 0 0 20px rgba(184, 255, 61, 0.3);
-    transition: all 0.2s ease;
-  }
-  button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 30px rgba(184, 255, 61, 0.6);
   }
   .btn-sub {
     background: transparent;
@@ -274,11 +246,7 @@ function sendHTML(res) {
     color: #fff;
     box-shadow: none;
   }
-  .btn-sub:hover {
-    background: rgba(255,255,255,0.1);
-  }
 
-  /* STATUS BADGES */
   .status-badge {
     display: inline-block;
     padding: 6px 12px;
@@ -290,9 +258,8 @@ function sendHTML(res) {
   .status-green { background: rgba(0, 230, 118, 0.2); color: #00e676; border: 1px solid #00e676; }
   .status-yellow { background: rgba(255, 214, 0, 0.2); color: #ffd600; border: 1px solid #ffd600; }
   .status-orange { background: rgba(255, 145, 0, 0.2); color: #ff9100; border: 1px solid #ff9100; }
-  .status-red { background: rgba(255, 99, 71, 0.25); color: #ff6347; border: 1px solid #ff6347; box-shadow: 0 0 10px rgba(255,99,71,0.4); }
+  .status-red { background: rgba(255, 99, 71, 0.25); color: #ff6347; border: 1px solid #ff6347; }
 
-  /* 4K DATA TABLE */
   .table-responsive { overflow-x: auto; margin-top: 16px; }
   table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
   th {
@@ -301,7 +268,6 @@ function sendHTML(res) {
     color: #91a0ad;
     font-family: 'Orbitron', sans-serif;
     font-size: 11px;
-    letter-spacing: 1px;
     border-bottom: 2px solid rgba(255,255,255,0.1);
   }
   td {
@@ -310,7 +276,6 @@ function sendHTML(res) {
     white-space: nowrap;
   }
 
-  /* FOOTER */
   .footer {
     text-align: center;
     padding: 20px;
@@ -318,7 +283,6 @@ function sendHTML(res) {
     border-top: 1px solid rgba(255,255,255,0.1);
     color: #728191;
     font-size: 13px;
-    letter-spacing: 0.5px;
   }
 
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -327,11 +291,6 @@ function sendHTML(res) {
 </head>
 <body>
 
-<!-- GYM VIBING STICKERS -->
-<svg class="gym-sticker" style="top:15%;left:5%;width:120px;" viewBox="0 0 24 24"><path fill="#b8ff3d" d="M5,5A2,2 0 0,0 3,7V17A2,2 0 0,0 5,19H6V5H5M19,5H18V19H19A2,2 0 0,0 21,17V7A2,2 0 0,0 19,5M9,3H7V21H9V3M17,3H15V21H17V3M11,8H13V16H11V8Z"/></svg>
-<svg class="gym-sticker" style="bottom:15%;right:5%;width:140px;" viewBox="0 0 24 24"><path fill="#b8ff3d" d="M20.57,14.86L22,13.43L20.57,12L17,15.57L8.43,7L12,3.43L10.57,2L9.14,3.43L7.71,2L6.29,3.43L7.71,4.86L3.43,9.14L2,7.71L0.57,9.14L2,10.57L0.57,12L2,13.43L3.43,12L12,20.57L8.43,17L7,18.43L8.43,19.86L7,21.29L8.43,22.71L9.86,21.29L11.29,22.71L12.71,21.29L11.29,19.86L19.86,11.29L21.29,12.71L22.71,11.29L21.29,9.86L20.57,10.57L20.57,14.86Z"/></svg>
-
-<!-- NAVBAR -->
 <div class="top-nav">
   <div class="brand-logo">
     <div class="tg-badge">
@@ -342,62 +301,60 @@ function sendHTML(res) {
   <div id="nav-btn"></div>
 </div>
 
-<!-- MAIN VIEW CONTAINER -->
 <div class="main-wrapper" id="app"></div>
 
-<!-- FOOTER -->
 <div class="footer">
   TheGym +91 70079 47859, WhatsApp +91 78958 32442, ®CareerBoot ©2026
 </div>
 
 <script>
-let token = localStorage.getItem('tg_token');
-let role = localStorage.getItem('tg_role');
+var token = localStorage.getItem('tg_token');
+var role = localStorage.getItem('tg_role');
 
 function renderNav() {
-  const el = document.getElementById('nav-btn');
+  var el = document.getElementById('nav-btn');
   if (token) {
     el.innerHTML = '<button onclick="logout()" class="btn-sub" style="width:auto;padding:8px 16px;">LOGOUT (' + role.toUpperCase() + ')</button>';
   } else {
-    el.innerHTML = '<span class="status-badge status-green">PORTAL READY</span>';
+    el.innerHTML = '<span class="status-badge status-green">PORTAL ONLINE</span>';
   }
 }
 
 function landing() {
   renderNav();
-  document.getElementById('app').innerHTML = \`
-    <div class="card-4k" style="max-width:420px;margin:40px auto;text-align:center;">
-      <h1 style="font-size:26px;color:#b8ff3d;margin-bottom:8px;">THEGYM ACCESS</h1>
-      <p style="color:#91a0ad;font-size:14px;margin-bottom:24px;">Enter your assigned Secret Key to proceed.</p>
-      <input type="password" id="key" placeholder="ENTER SECRET KEY" autocomplete="off" style="text-align:center;letter-spacing:3px;">
-      <button onclick="doLogin()">ACCESS PORTAL →</button>
-      <div id="err" style="color:#ff6347;font-size:13px;margin-top:14px;"></div>
-    </div>
-  \`;
+  document.getElementById('app').innerHTML = 
+    '<div class="card-4k" style="max-width:420px;margin:40px auto;text-align:center;">' +
+      '<h1 style="font-size:26px;color:#b8ff3d;margin-bottom:8px;">THEGYM PORTAL</h1>' +
+      '<p style="color:#91a0ad;font-size:14px;margin-bottom:24px;">Enter your Secret Key to enter system.</p>' +
+      '<input type="password" id="keyInput" placeholder="ENTER SECRET KEY" autocomplete="off" style="text-align:center;letter-spacing:3px;">' +
+      '<button onclick="doLogin()">ACCESS PORTAL →</button>' +
+      '<div id="err" style="color:#ff6347;font-size:13px;margin-top:14px;"></div>' +
+    '</div>';
 }
 
-async function doLogin() {
-  const key = document.getElementById('key').value.trim();
-  const err = document.getElementById('err');
-  err.textContent = '';
-  if (!key) return err.textContent = 'Secret key is required';
+function doLogin() {
+  var keyVal = document.getElementById('keyInput').value.trim();
+  var errEl = document.getElementById('err');
+  errEl.textContent = '';
+  if (!keyVal) { errEl.textContent = 'Secret key is required'; return; }
 
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Login failed');
+  fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key: keyVal })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.error) throw new Error(data.error);
     token = data.token;
     role = data.role;
     localStorage.setItem('tg_token', token);
     localStorage.setItem('tg_role', role);
     route();
-  } catch (e) {
-    err.textContent = e.message;
-  }
+  })
+  .catch(function(e) {
+    errEl.textContent = e.message;
+  });
 }
 
 function logout() {
@@ -406,238 +363,199 @@ function logout() {
   landing();
 }
 
-// ================================================================
-// ADMIN PANEL
-// ================================================================
 function showAdminPanel() {
   renderNav();
-  document.getElementById('app').innerHTML = \`
-    <div class="card-4k">
-      <h2 style="color:#b8ff3d;margin-bottom:16px;">ADMIN PANEL</h2>
-      <div class="grid-2">
-        <button onclick="showRegisterForm()">MEMBERS REGISTER PAGE</button>
-        <button onclick="showMembersSheet()" class="btn-sub">MEMBERS PROFILE PAGE</button>
-      </div>
-    </div>
-    <div id="admin-content"></div>
-  \`;
+  document.getElementById('app').innerHTML = 
+    '<div class="card-4k">' +
+      '<h2 style="color:#b8ff3d;margin-bottom:16px;">ADMIN PANEL</h2>' +
+      '<div class="grid-2">' +
+        '<button onclick="showRegisterForm()">MEMBERS REGISTER PAGE</button>' +
+        '<button onclick="showMembersSheet()" class="btn-sub">MEMBERS PROFILE PAGE</button>' +
+      '</div>' +
+    '</div>' +
+    '<div id="admin-content"></div>';
   showMembersSheet();
 }
 
 function showRegisterForm() {
-  document.getElementById('admin-content').innerHTML = \`
-    <div class="card-4k" style="max-width:650px;margin:0 auto;">
-      <h2 style="margin-bottom:20px;font-size:20px;">NEW MEMBER REGISTRATION</h2>
-      <form onsubmit="handleRegister(event)">
-        <input name="name" placeholder="Member Full Name" required>
-        <input name="secretKey" placeholder="Assign Secret Key" required>
-        <div class="grid-2">
-          <div><label style="font-size:11px;color:#91a0ad;">Joining Date</label><input type="date" name="joiningDate" required></div>
-          <div><label style="font-size:11px;color:#91a0ad;">Joining Day Weight (kg)</label><input type="number" step="0.1" name="joiningWeight" placeholder="e.g. 75.5" required></div>
-        </div>
-        <div class="grid-2">
-          <div><label style="font-size:11px;color:#91a0ad;">Goal Category</label><select name="goalCategory"><option value="Loss">Weight Loss</option><option value="Gain">Weight Gain</option></select></div>
-          <div><label style="font-size:11px;color:#91a0ad;">Goal Weight (kg)</label><input type="number" step="0.1" name="goalWeight" placeholder="e.g. 68.0" required></div>
-        </div>
-        <div class="grid-2">
-          <div><label style="font-size:11px;color:#91a0ad;">Members Fees</label><select name="fee"><option value="500">₹500</option><option value="700">₹700</option></select></div>
-          <div><label style="font-size:11px;color:#91a0ad;">Contact Number</label><input name="contact" placeholder="Mobile Number" required></div>
-        </div>
-        <div><label style="font-size:11px;color:#91a0ad;">Last Fees Submission Date</label><input type="date" name="lastFeeDate" required></div>
-        <button type="submit" style="margin-top:10px;">REGISTER MEMBER</button>
-      </form>
-      <div id="err" style="color:#ff6347;font-size:13px;margin-top:10px;"></div>
-    </div>
-  \`;
+  document.getElementById('admin-content').innerHTML = 
+    '<div class="card-4k" style="max-width:650px;margin:0 auto;">' +
+      '<h2 style="margin-bottom:20px;font-size:20px;">NEW MEMBER REGISTRATION</h2>' +
+      '<form onsubmit="handleRegister(event)">' +
+        '<input name="name" placeholder="Member Full Name" required>' +
+        '<input name="secretKey" placeholder="Assign Secret Key" required>' +
+        '<div class="grid-2">' +
+          '<div><label style="font-size:11px;color:#91a0ad;">Joining Date</label><input type="date" name="joiningDate" required></div>' +
+          '<div><label style="font-size:11px;color:#91a0ad;">Joining Day Weight (kg)</label><input type="number" step="0.1" name="joiningWeight" placeholder="e.g. 75.5" required></div>' +
+        '</div>' +
+        '<div class="grid-2">' +
+          '<div><label style="font-size:11px;color:#91a0ad;">Goal Category</label><select name="goalCategory"><option value="Loss">Weight Loss</option><option value="Gain">Weight Gain</option></select></div>' +
+          '<div><label style="font-size:11px;color:#91a0ad;">Goal Weight (kg)</label><input type="number" step="0.1" name="goalWeight" placeholder="e.g. 68.0" required></div>' +
+        '</div>' +
+        '<div class="grid-2">' +
+          '<div><label style="font-size:11px;color:#91a0ad;">Members Fees</label><select name="fee"><option value="500">₹500</option><option value="700">₹700</option></select></div>' +
+          '<div><label style="font-size:11px;color:#91a0ad;">Contact Number</label><input name="contact" placeholder="Mobile Number" required></div>' +
+        '</div>' +
+        '<div><label style="font-size:11px;color:#91a0ad;">Last Fees Submission Date</label><input type="date" name="lastFeeDate" required></div>' +
+        '<button type="submit" style="margin-top:10px;">REGISTER MEMBER</button>' +
+      '</form>' +
+      '<div id="err" style="color:#ff6347;font-size:13px;margin-top:10px;"></div>' +
+    '</div>';
 }
 
-async function handleRegister(e) {
+function handleRegister(e) {
   e.preventDefault();
-  const body = Object.fromEntries(new FormData(e.target));
-  try {
-    const res = await fetch('/api/members', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify(body)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+  var form = e.target;
+  var body = {
+    name: form.name.value,
+    secretKey: form.secretKey.value,
+    joiningDate: form.joiningDate.value,
+    joiningWeight: form.joiningWeight.value,
+    goalCategory: form.goalCategory.value,
+    goalWeight: form.goalWeight.value,
+    fee: form.fee.value,
+    contact: form.contact.value,
+    lastFeeDate: form.lastFeeDate.value
+  };
+
+  fetch('/api/members', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(body)
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.error) throw new Error(data.error);
     alert('Member Registered Successfully!');
     showMembersSheet();
-  } catch (err) {
+  })
+  .catch(function(err) {
     document.getElementById('err').textContent = err.message;
-  }
+  });
 }
 
-async function showMembersSheet() {
-  try {
-    const res = await fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
+function showMembersSheet() {
+  fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.error) throw new Error(data.error);
 
-    let rows = data.members.map(m => \`
-      <tr>
-        <td><b>\${m.name}</b></td>
-        <td>\${m.joiningDate}</td>
-        <td>\${m.joiningWeight} kg</td>
-        <td><b>\${m.currentWeight} kg</b> <button onclick="editWeight('\${m.id}', '\${m.currentWeight}')" style="padding:4px 8px;font-size:10px;width:auto;display:inline-block;margin-left:6px;">EDIT</button></td>
-        <td><span class="status-badge status-green">\${m.growth}%</span></td>
-      </tr>
-    \`).join('');
-
-    document.getElementById('admin-content').innerHTML = \`
-      <div class="card-4k">
-        <h2>MEMBERS PROFILE SHEET</h2>
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr><th>Name</th><th>Joining Date</th><th>Joining Weight</th><th>Current Day Weight</th><th>Growth Status (%)</th></tr>
-            </thead>
-            <tbody>\${rows || '<tr><td colspan="5">No members registered yet</td></tr>'}</tbody>
-          </table>
-        </div>
-      </div>
-    \`;
-  } catch (e) {
-    alert(e.message);
-  }
-}
-
-async function editWeight(id, oldWt) {
-  const weight = prompt('Enter Current Day Weight (kg):', oldWt);
-  if (!weight) return;
-  try {
-    const res = await fetch('/api/members/' + id + '/weight', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ currentWeight: Number(weight) })
-    });
-    if (!res.ok) throw new Error('Weight update failed');
-    showMembersSheet();
-  } catch (e) { alert(e.message); }
-}
-
-// ================================================================
-// SUPREME ADMIN PANEL — REPORT DASHBOARD
-// ================================================================
-async function showSupremeDashboard() {
-  renderNav();
-  try {
-    const res = await fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    let rows = data.members.map((m, index) => {
-      // Calculate Days Balance / Overdue
-      const lastFee = new Date(m.lastFeeDate);
-      const today = new Date();
-      const diffTime = today - lastFee;
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      
-      let statusHtml = '';
-      if (diffDays > 30) {
-        const gone = diffDays - 30;
-        statusHtml = \`<span class="status-badge status-red">\${gone} Days Gone</span>\`;
-      } else {
-        const remaining = 30 - diffDays;
-        if (remaining >= 20) {
-          statusHtml = \`<span class="status-badge status-green">\${remaining} Days Balance</span>\`;
-        } else if (remaining >= 11) {
-          statusHtml = \`<span class="status-badge status-yellow">\${remaining} Days Balance</span>\`;
-        } else {
-          statusHtml = \`<span class="status-badge status-orange">\${remaining} Days Balance</span>\`;
-        }
-      }
-
-      return \`
-        <tr>
-          <td><b>\${index + 1}</b></td>
-          <td><b>\${m.name}</b></td>
-          <td>\${todayStr}</td>
-          <td>₹\${m.fee}</td>
-          <td>\${statusHtml}</td>
-          <td><span class="status-badge status-green">\${m.growth}%</span></td>
-          <td>\${m.contact}</td>
-        </tr>
-      \`;
+    var rows = data.members.map(function(m) {
+      return '<tr>' +
+        '<td><b>' + m.name + '</b></td>' +
+        '<td>' + m.joiningDate + '</td>' +
+        '<td>' + m.joiningWeight + ' kg</td>' +
+        '<td><b>' + m.currentWeight + ' kg</b> <button onclick="editWeight(\'' + m.id + '\', \'' + m.currentWeight + '\')" style="padding:4px 8px;font-size:10px;width:auto;display:inline-block;margin-left:6px;">EDIT</button></td>' +
+        '<td><span class="status-badge status-green">' + m.growth + '%</span></td>' +
+      '</tr>';
     }).join('');
 
-    document.getElementById('app').innerHTML = \`
-      <div class="card-4k">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
-          <div>
-            <h2 style="color:#b8ff3d;">SUPREME ADMIN REPORT DASHBOARD</h2>
-            <p style="color:#91a0ad;font-size:13px;">Daily-to-Monthly Live Tracking System</p>
-          </div>
-          <div class="status-badge status-green">TODAY: \${todayStr}</div>
-        </div>
-
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>SL NO.</th>
-                <th>NAME</th>
-                <th>DATE</th>
-                <th>FEES</th>
-                <th>STATUS</th>
-                <th>GROWTH</th>
-                <th>CONTACT NUMBER</th>
-              </tr>
-            </thead>
-            <tbody>\${rows || '<tr><td colspan="7">No report data available</td></tr>'}</tbody>
-          </table>
-        </div>
-      </div>
-    \`;
-  } catch (e) {
-    alert(e.message);
-  }
+    document.getElementById('admin-content').innerHTML = 
+      '<div class="card-4k">' +
+        '<h2>MEMBERS PROFILE SHEET</h2>' +
+        '<div class="table-responsive">' +
+          '<table>' +
+            '<thead><tr><th>Name</th><th>Joining Date</th><th>Joining Weight</th><th>Current Weight</th><th>Growth Status (%)</th></tr></thead>' +
+            '<tbody>' + (rows || '<tr><td colspan="5">No members registered yet</td></tr>') + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
+  });
 }
 
-// ================================================================
-// MEMBER PERFORMANCE PAGE
-// ================================================================
-async function showMemberPerformance() {
+function editWeight(id, oldWt) {
+  var weight = prompt('Enter Current Day Weight (kg):', oldWt);
+  if (!weight) return;
+  fetch('/api/members/' + id + '/weight', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify({ currentWeight: Number(weight) })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function() { showMembersSheet(); });
+}
+
+function showSupremeDashboard() {
   renderNav();
-  try {
-    const res = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-    const m = data.member;
+  fetch('/api/members', { headers: { 'Authorization': 'Bearer ' + token } })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.error) throw new Error(data.error);
+    var todayStr = new Date().toISOString().split('T')[0];
 
-    document.getElementById('app').innerHTML = \`
-      <div class="card-4k" style="text-align:center;max-width:600px;margin:20px auto;">
-        <div style="font-size:12px;letter-spacing:2px;color:#b8ff3d;font-family:'Orbitron';">MEMBER PERFORMANCE DASHBOARD</div>
-        <h1 style="font-size:32px;margin:12px 0 20px;color:#fff;">\${m.name.toUpperCase()}</h1>
+    var rows = data.members.map(function(m, index) {
+      var lastFee = new Date(m.lastFeeDate);
+      var today = new Date();
+      var diffDays = Math.floor((today - lastFee) / (1000 * 60 * 60 * 24));
+      
+      var statusHtml = '';
+      if (diffDays > 30) {
+        statusHtml = '<span class="status-badge status-red">' + (diffDays - 30) + ' Days Gone</span>';
+      } else {
+        var rem = 30 - diffDays;
+        if (rem >= 20) statusHtml = '<span class="status-badge status-green">' + rem + ' Days Balance</span>';
+        else if (rem >= 11) statusHtml = '<span class="status-badge status-yellow">' + rem + ' Days Balance</span>';
+        else statusHtml = '<span class="status-badge status-orange">' + rem + ' Days Balance</span>';
+      }
 
-        <!-- VIBING PROGRESS BAR -->
-        <div style="background:rgba(5,8,14,0.9);border-radius:16px;padding:24px;border:1px solid rgba(184,255,61,0.3);margin-bottom:24px;">
-          <div style="font-size:12px;color:#91a0ad;margin-bottom:8px;">GROWTH STATUS</div>
-          <div style="font-size:64px;font-weight:900;color:#b8ff3d;font-family:'Orbitron';text-shadow:0 0 25px rgba(184,255,61,0.5);">\${m.growth}%</div>
-          
-          <div style="width:100%;background:rgba(255,255,255,0.1);height:12px;border-radius:6px;overflow:hidden;margin-top:16px;">
-            <div style="width:\${Math.min(100, Math.max(0, m.growth))}%;background:linear-gradient(90deg, #b8ff3d, #00e676);height:100%;"></div>
-          </div>
-        </div>
+      return '<tr>' +
+        '<td><b>' + (index + 1) + '</b></td>' +
+        '<td><b>' + m.name + '</b></td>' +
+        '<td>' + todayStr + '</td>' +
+        '<td>₹' + m.fee + '</td>' +
+        '<td>' + statusHtml + '</td>' +
+        '<td><span class="status-badge status-green">' + m.growth + '%</span></td>' +
+        '<td>' + m.contact + '</td>' +
+      '</tr>';
+    }).join('');
 
-        <div class="grid-2">
-          <div style="background:rgba(5,8,14,0.8);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">
-            <div style="font-size:11px;color:#91a0ad;">GOAL CATEGORY</div>
-            <div style="font-size:18px;font-weight:bold;color:#fff;margin-top:4px;">\${m.goalCategory}</div>
-          </div>
-          <div style="background:rgba(5,8,14,0.8);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">
-            <div style="font-size:11px;color:#91a0ad;">TARGET GOAL WEIGHT</div>
-            <div style="font-size:18px;font-weight:bold;color:#b8ff3d;margin-top:4px;">\${m.goalWeight} kg</div>
-          </div>
-        </div>
-      </div>
-    \`;
-  } catch (e) {
-    alert(e.message);
-  }
+    document.getElementById('app').innerHTML = 
+      '<div class="card-4k">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">' +
+          '<div><h2 style="color:#b8ff3d;">SUPREME ADMIN REPORT DASHBOARD</h2><p style="color:#91a0ad;font-size:13px;">Daily-to-Monthly Live Tracking System</p></div>' +
+          '<div class="status-badge status-green">TODAY: ' + todayStr + '</div>' +
+        '</div>' +
+        '<div class="table-responsive">' +
+          '<table>' +
+            '<thead><tr><th>SL NO.</th><th>NAME</th><th>DATE</th><th>FEES</th><th>STATUS</th><th>GROWTH</th><th>CONTACT NUMBER</th></tr></thead>' +
+            '<tbody>' + (rows || '<tr><td colspan="7">No report data available</td></tr>') + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
+  });
+}
+
+function showMemberPerformance() {
+  renderNav();
+  fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.error) throw new Error(data.error);
+    var m = data.member;
+
+    document.getElementById('app').innerHTML = 
+      '<div class="card-4k" style="text-align:center;max-width:600px;margin:20px auto;">' +
+        '<div style="font-size:12px;letter-spacing:2px;color:#b8ff3d;font-family:\'Orbitron\';">MEMBER PERFORMANCE DASHBOARD</div>' +
+        '<h1 style="font-size:32px;margin:12px 0 20px;color:#fff;">' + m.name.toUpperCase() + '</h1>' +
+        '<div style="background:rgba(5,8,14,0.9);border-radius:16px;padding:24px;border:1px solid rgba(184,255,61,0.3);margin-bottom:24px;">' +
+          '<div style="font-size:12px;color:#91a0ad;margin-bottom:8px;">GROWTH STATUS</div>' +
+          '<div style="font-size:64px;font-weight:900;color:#b8ff3d;font-family:\'Orbitron\'; text-shadow:0 0 25px rgba(184,255,61,0.5);">' + m.growth + '%</div>' +
+          '<div style="width:100%;background:rgba(255,255,255,0.1);height:12px;border-radius:6px;overflow:hidden;margin-top:16px;">' +
+            '<div style="width:' + Math.min(100, Math.max(0, m.growth)) + '%;background:linear-gradient(90deg, #b8ff3d, #00e676);height:100%;"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="grid-2">' +
+          '<div style="background:rgba(5,8,14,0.8);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">' +
+            '<div style="font-size:11px;color:#91a0ad;">GOAL CATEGORY</div>' +
+            '<div style="font-size:18px;font-weight:bold;color:#fff;margin-top:4px;">' + m.goalCategory + '</div>' +
+          '</div>' +
+          '<div style="background:rgba(5,8,14,0.8);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);">' +
+            '<div style="font-size:11px;color:#91a0ad;">TARGET GOAL WEIGHT</div>' +
+            '<div style="font-size:18px;font-weight:bold;color:#b8ff3d;margin-top:4px;">' + m.goalWeight + ' kg</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  });
 }
 
 function route() {
@@ -667,7 +585,6 @@ const server = http.createServer(async (req, res) => {
       return json(res, 503, { error: "Database connecting, please wait..." });
     }
 
-    // LOGIN ENDPOINT
     if (url.pathname === "/api/login" && req.method === "POST") {
       const body = await readBody(req);
       const key = String(body.key || "").trim();
@@ -687,14 +604,12 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { token: tkn, role });
     }
 
-    // GET ALL MEMBERS
     if (url.pathname === "/api/members" && req.method === "GET") {
       if (!guard(req, res, ["admin", "supreme"])) return;
       const list = await members.find({}).sort({ createdAt: 1 }).toArray();
       return json(res, 200, { members: list.map(clean) });
     }
 
-    // CREATE MEMBER
     if (url.pathname === "/api/members" && req.method === "POST") {
       if (!guard(req, res, ["admin", "supreme"])) return;
       const body = await readBody(req);
@@ -717,7 +632,6 @@ const server = http.createServer(async (req, res) => {
       return json(res, 201, { member: clean({ ...member, _id: result.insertedId }) });
     }
 
-    // UPDATE CURRENT WEIGHT
     if (url.pathname.match(/^\/api\/members\/[a-f0-9]{24}\/weight$/) && req.method === "PATCH") {
       if (!guard(req, res, ["admin", "supreme"])) return;
       const id = url.pathname.split("/")[3];
@@ -729,7 +643,6 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true });
     }
 
-    // GET MEMBER SELF DATA
     if (url.pathname === "/api/me" && req.method === "GET") {
       const s = guard(req, res, ["member"]);
       if (!s) return;
@@ -737,7 +650,6 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { member: clean(member) });
     }
 
-    // HEALTH CHECK
     if (url.pathname === "/health") {
       return json(res, 200, { ok: true, name: "TheGym", database: !!db });
     }
